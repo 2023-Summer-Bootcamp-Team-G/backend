@@ -1,13 +1,4 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: 'Priority: High, Priority: Low, Priority: Medium, Type: Feature/Function'
-assignees: ''
-
----
-
----
 name: feature-request
 about: 기능 설명 및 구현
 title: "[feat]"
