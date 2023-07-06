@@ -1,13 +1,4 @@
 ---
-name: error-report.md
-about: 에러 사항을 입력해주세요!
-title: ''
-labels: ''
-assignees: ''
-
----
-
----
 name: error-report
 about: 오류 설명 및 수정
 title: "[fix]"
