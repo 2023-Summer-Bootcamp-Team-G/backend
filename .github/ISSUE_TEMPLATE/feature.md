@@ -1,8 +1,8 @@
 ---
-name: feature-request
+name: feature
 about: 기능 설명 및 구현
 title: "[feat]"
-labels: 
+labels: ''
 assignees: ''
 
 ---

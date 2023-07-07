@@ -1,8 +1,8 @@
 ---
-name: refactor-report
+name: refactor
 about: 클린코드, 디렉토리 구조 변경
 title: "[refactor]"
-labels: 리팩토링
+labels: ''
 assignees: ''
 
 ---

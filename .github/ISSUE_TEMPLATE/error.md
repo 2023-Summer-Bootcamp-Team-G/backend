@@ -1,5 +1,5 @@
 ---
-name: error-report
+name: error
 about: 오류 설명 및 수정
 title: "[fix]"
 labels: 'Priority: Critical, Priority: High, Priority: Low, Priority: Medium, Type:
