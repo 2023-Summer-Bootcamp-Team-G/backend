@@ -1,7 +1,14 @@
-FROM python:3.11
+# syntax=docker/dockerfile:1
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONBUFFERED 1
+ARG PYTHON_VERSION=3.9.9
+FROM python:${PYTHON_VERSION}-slim as base
+
+# Prevents Python from writing pyc files.
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
 
 ## -----------------------------------------------------
 ##EC2에서 돌릴 경우
@@ -36,15 +43,39 @@ ENV PYTHONBUFFERED 1
 ## 소스 코드 복사
 #COPY . ./Docker
 
-WORKDIR /mainapp
+# WORKDIR /mainapp
+WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Create a non-privileged user that the app will run under.
+# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    appuser
+
+# Download dependencies as a separate step to take advantage of Docker's caching.
+# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
+# Leverage a bind mount to requirements.txt to avoid having to copy them into
+# into this layer.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python -m pip install -r requirements.txt
 
 COPY . .
 
-## -----------------------------------------------------
-# 포트 노출 및 Django 실행 명령
+RUN mkdir static
+RUN python manage.py collectstatic
+
+USER appuser
+
+# COPY . .
+
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD gunicorn 'gTeamProject.wsgi' --bind=0.0.0.0:8000
