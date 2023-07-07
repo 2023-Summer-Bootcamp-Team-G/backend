@@ -36,13 +36,14 @@ def question(request):
             updated_questions.append(question)
     else:
         return Response({'errors': questions_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
     # 데이터(질문) 저장 및 응답 정보 생성
     updated_serializer = QuestionSerializer2(data=updated_questions, many=True)
     response_data = []
     if updated_serializer.is_valid():
         updated_questions = updated_serializer.save()
         for question in updated_questions:
-            response_data.append({'questionId':question.question_number, 'questionText':question.question_text})
+            response_data.append({'question_id':question.question_number, 'question_text':question.question_text})
     else:
         return Response({'error':updated_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     response = {'questions': response_data}
