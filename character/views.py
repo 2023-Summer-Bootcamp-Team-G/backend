@@ -8,6 +8,7 @@ from .models import Submit, Answer
 from question.models import Question
 from user.models import User
 from .serializer import SubmitSerializer, SubmitDetailSerializer, AnswerSerializer
+from question.serializer import QuestionSerializer3
 
 class Characters(APIView):
     def get(self, request):
@@ -37,7 +38,7 @@ class Characters(APIView):
             return Response({'error': 'user_nic_name가 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
         
         response_data = {"characters": submit_serializer.data, "user_nick_name": user_nick_name}
-        Response(response_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_200_OK)
         
 
 class CharacterDetail(APIView):
@@ -52,8 +53,9 @@ class CharacterDetail(APIView):
         
         #캐릭터 질문 정보 가져오기
         question = Question.objects.filter(poll_id=submit.poll_id)
+        question_data = QuestionSerializer3(question, many=True)
         
+        submit_data.data['questions'] = question_data.data
+        submit_data.data['answers'] = answer_data.data
         
-        
-        
-        
+        return Response(submit_data.data, status=status.HTTP_200_OK)
