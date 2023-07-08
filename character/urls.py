@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import Character
+from .views import Characters
 
 urlpatterns = [
-    path('', Character.as_view()),
+    path('', Characters.as_view()),
+    path('<int:character_id>', Characters.as_view()),
 ]
