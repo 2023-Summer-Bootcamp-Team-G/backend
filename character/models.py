@@ -16,7 +16,6 @@ class Submit(BaseModel):
     poll_id = models.ForeignKey(Poll, on_delete=models.CASCADE, null=True)
     result_url = models.CharField(max_length=200, null=True)
     nick_name = models.CharField(max_length=200, null=True)
-    duplicate = models.BooleanField(default=False)
     
 class Answer(BaseModel):
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE, null=False)

@@ -55,7 +55,10 @@ class CharacterDetail(APIView):
         question = Question.objects.filter(poll_id=submit.poll_id)
         question_data = QuestionSerializer3(question, many=True)
         
-        submit_data.data['questions'] = question_data.data
-        submit_data.data['answers'] = answer_data.data
+        # questions = {"questions": question_data.data}
+        # answers = {"answers":answer_data.data}
         
-        return Response(submit_data.data, status=status.HTTP_200_OK)
+        submit_data.data['questions'] = question_data.data
+        
+        # response_data = {submit_data.data, "questions": questions, "answers": answers}
+        return Response((submit_data.data), status=status.HTTP_200_OK)
