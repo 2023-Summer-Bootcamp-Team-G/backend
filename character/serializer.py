@@ -4,7 +4,7 @@ from .models import Submit, Answer
 class SubmitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submit
-        fields = ['id', 'result_url', 'nick_name', 'duplicate']
+        fields = ['id', 'result_url', 'nick_name']
 
 class SubmitDetailSerializer(serializers.ModelSerializer):
     class Meta:
