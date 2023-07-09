@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Submit, Answer
+from question.models import Question
+from question.serializer import QuestionSerializer3
 
 class SubmitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,6 +12,7 @@ class SubmitDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submit
         fields = ['id', 'result_url', 'nick_name']
+
         
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
