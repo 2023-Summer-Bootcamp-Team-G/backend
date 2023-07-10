@@ -71,4 +71,3 @@ class LoginView(APIView):
             return Response({'error': 'Invalid username or password.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response({'message': 'Login successful.'}, status=status.HTTP_200_OK)
-
