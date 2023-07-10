@@ -20,13 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-cg^q580h%p5hza=c_$6#!y_w0zy#w1!^_+h@fboqgh&b3k^6(5'
+SECRET_KEY = 'django-insecure-h%hj*4^5(1r84@v!=v=0)=^2@k_q50$c=eh61kpr=&p0idlwkn'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Application definition
 
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
     'rest_framework',
     'question',
     'user',
@@ -80,7 +82,7 @@ WSGI_APPLICATION = 'gTeamProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3', 
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -102,7 +104,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
