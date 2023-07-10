@@ -13,7 +13,7 @@ class BaseModel(models.Model):
 
 class Submit(BaseModel):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    poll_id = models.ForeignKey(Poll, on_delete=models.CASCADE, null=False)
+    poll_id = models.ForeignKey(Poll, on_delete=models.CASCADE, null=True)
     result_url = models.CharField(max_length=200, null=True)
     nick_name = models.CharField(max_length=200, null=True)
     
