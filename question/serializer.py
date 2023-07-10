@@ -15,3 +15,8 @@ class QuestionSerializer2(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ['poll_id', 'question_number', 'question_text']
+
+class QuestionSerializer3(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ['question_number', 'question_text']
