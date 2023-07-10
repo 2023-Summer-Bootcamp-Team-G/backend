@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework',
     'question',
-    'user',
     'character',
 ]
 
