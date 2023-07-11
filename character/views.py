@@ -120,7 +120,11 @@ class Characters(APIView):
         submit_id = submit_data["character_id"]
 
         # Answer - submit_id 업데이트
-        Answer.objects.filter(id__in=question_ids).update(submit_id=submit_id)
+        submit = Submit.objects.get(id=submit_id)
+        for question_id in question_ids:
+            answer = Answer.objects.get(question_id=question_id, submit_id__isnull=True)
+            answer.submit_id = submit
+            answer.save()
 
         submit_data.pop("user_id")
         submit_data.pop("poll_id")
