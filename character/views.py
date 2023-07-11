@@ -33,6 +33,8 @@ class Characters(APIView):
         response_data = {"characters": submit_serializer.data}
         return Response(response_data, status=status.HTTP_200_OK)
         
+        def post(self, request):
+            pass
 
 class CharacterDetail(APIView):
     def get(self, request, character_id):
