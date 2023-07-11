@@ -12,7 +12,7 @@ User = get_user_model()
 
 class KakaoLoginView(View):
     def get(self, request):
-        app_key = settings.KAKAO_APP_KEY
+        # app_key = settings.KAKAO_APP_KEY
         redirect_uri = request.build_absolute_uri("/accounts/login/kakao/callback/")
         authorization_url = f"https://kauth.kakao.com/oauth/authorize?client_id={app5c705df135a44f59c9b017be25864e0b_key}&redirect_uri={redirect_uri}&response_type=code"
         return redirect(authorization_url)
