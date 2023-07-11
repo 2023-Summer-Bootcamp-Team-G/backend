@@ -5,9 +5,36 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 
 from .models import Submit, Answer
-from question.models import Question
-from .serializer import SubmitSerializer, SubmitDetailSerializer, AnswerSerializer
+from question.models import Question, Poll
+from .serializer import SubmitSerializer, SubmitDetailSerializer, SubmitCreatelSerializer, AnswerSerializer, AnswerPostSerializer
 from question.serializer import QuestionSerializer3
+
+fixed_question_num = 3
+
+def extract_keyword(answer):
+    return "키워드"
+
+def create_image(prompt):
+    url = "https://exapmle.com/"
+    return url
+
+def create_submit(poll_id, nick_name, prompt):
+    result_url = create_image(prompt)
+    
+    poll = Poll.objects.get(id=poll_id)
+    user_id = poll.user_id
+    
+    submit_data = {'user_id': user_id, 'poll_id': poll_id, 'result_url': result_url, 'nick_name': nick_name}
+    
+    submit_serializer = SubmitCreatelSerializer(data=submit_data)
+    if submit_serializer.is_valid():
+        submit_serializer.save()
+    else:
+        return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    submit_data['character_id'] = submit_serializer.data['id']
+    
+    return Response(submit_data, status=status.HTTP_201_CREATED)
 
 class Characters(APIView):
     def get(self, request):
@@ -25,7 +52,7 @@ class Characters(APIView):
                 keyword = []
                 for answer in answer_serializer.data:
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
-                    if 1<= answer['num'] <= 3:
+                    if 1<= answer['num'] <= fixed_question_num:
                         keyword.append(answer['content'])
                 # response data에 키워드 추가
                 data['keyword'] = keyword
@@ -33,8 +60,46 @@ class Characters(APIView):
         response_data = {"characters": submit_serializer.data}
         return Response(response_data, status=status.HTTP_200_OK)
         
-        def post(self, request):
-            pass
+    def post(self, request):
+        poll_id = request.query_params.get('poll_id')
+        nick_name = request.data.get('creatorName')
+        answers = request.data.get('answers')
+        
+        prompt = []
+        question_ids = []
+        
+        # 답변 추출 및 DB 저장
+        for i, answer in enumerate(answers, start=1):
+            if i <= fixed_question_num:
+                keyword = extract_keyword(answer)
+                
+                question_id = answer['question_id']
+                question_ids.append(question_id)
+                
+                data = {'question_id': question_id, 'num': i, 'content': keyword}
+                answer_serializer = AnswerPostSerializer(data=data)
+                if answer_serializer.is_valid():
+                    answer_serializer.save()
+                else:
+                    return Response(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                # 추출된 키워드 배열
+                prompt.append(keyword)
+        
+        # 캐릭터 생성
+        submit_data = create_submit(poll_id, nick_name, prompt)
+        submit_id = submit_data['character_id']
+        
+        # Answer - submit_id 업데이트
+        Question.objects.filter(id__in=question_ids).update(submit_id=submit_id)
+        
+        submit_data.pop('user_id')
+        submit_data.pop('poll_id')
+        submit_data['keyowrd'] = prompt
+        
+        return Response(submit_data, status=status.HTTP_201_CREATED)
+
+        
+                
 
 class CharacterDetail(APIView):
     def get(self, request, character_id):

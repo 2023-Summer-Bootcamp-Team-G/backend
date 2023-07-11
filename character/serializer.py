@@ -13,8 +13,17 @@ class SubmitDetailSerializer(serializers.ModelSerializer):
         model = Submit
         fields = ['id', 'result_url', 'nick_name']
 
+class SubmitCreatelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Submit
+        fields = ['user_id','poll_id', 'result_url', 'nick_name']
         
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = ['num', 'content']
+        
+class AnswerPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ['question_id', 'num', 'content']
