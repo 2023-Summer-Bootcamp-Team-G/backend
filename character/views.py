@@ -6,7 +6,6 @@ from rest_framework.decorators import api_view
 
 from .models import Submit, Answer
 from question.models import Question
-from user.models import User
 from .serializer import SubmitSerializer, SubmitDetailSerializer, AnswerSerializer
 from question.serializer import QuestionSerializer3
 
