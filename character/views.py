@@ -46,17 +46,15 @@ def create_submit(poll_id, nick_name, prompt):
     if submit_serializer.is_valid():
         submit_instance = submit_serializer.save()
     else:
-        return Response(
-            submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     submit_data["character_id"] = submit_instance.id
-    
+
     # response data 수정
     submit_data.pop("user_id")
     submit_data.pop("poll_id")
     submit_data["keyowrd"] = prompt
-    
+
     return submit_data
 
 
@@ -103,7 +101,7 @@ class Characters(APIView):
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt)
         submit_id = submit_data["character_id"]
-        
+
         # 답변 저장
         for i, answer in enumerate(answers, start=1):
             if i <= fixed_question_num:
@@ -148,19 +146,19 @@ class CharacterDetail(APIView):
         response_data["answers"] = answer_data.data
 
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
 
 class DuplicateCharacter(APIView):
     def post(self, request):
         user_id = request.query_params.get("user_id")
-        
-        poll = Poll.objects.filter(user_id=user_id).order_by('created_at').first()
+
+        poll = Poll.objects.filter(user_id=user_id).order_by("created_at").first()
         poll_id = poll.id
-        
+
         submits = Submit.objects.filter(poll_id=poll_id)
-        
+
         keyword_count = [{} for _ in range(fixed_question_num + 1)]
-        
+
         for submit in submits:
             submit_id = submit.id
             answers = Answer.objects.filter(submit_id=submit_id)
@@ -170,13 +168,13 @@ class DuplicateCharacter(APIView):
                         keyword_count[i][answer.content] += 1
                     else:
                         keyword_count[i][answer.content] = 1
-        
+
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
             prompt.append(max_value_keyword)
-        
+
         submit_data = create_submit(poll_id, None, prompt)
         submit_id = submit_data["character_id"]
-        
+
         return Response(submit_data, status=status.HTTP_201_CREATED)
