@@ -97,33 +97,6 @@ class Characters(APIView):
                 break
 
         # 캐릭터 생성
-        # result_url = create_image(prompt)
-
-        # poll = Poll.objects.get(id=poll_id)
-        # user_id = poll.user_id.id
-
-        # submit_data = {
-        #     "user_id": user_id,
-        #     "poll_id": poll_id,
-        #     "result_url": result_url,
-        #     "nick_name": nick_name,
-        # }
-
-        # submit_serializer = SubmitCreateSerializer(data=submit_data)
-        # if submit_serializer.is_valid():
-        #     submit_instance = submit_serializer.save()
-        # else:
-        #     return Response(
-        #         submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-        #     )
-
-        # submit_data["character_id"] = submit_instance.id
-        # submit_id = submit_data["character_id"]
-        
-        # # response data 수정
-        # submit_data.pop("user_id")
-        # submit_data.pop("poll_id")
-        # submit_data["keyowrd"] = prompt
         submit_data = create_submit(poll_id, nick_name, prompt)
         submit_id = submit_data["character_id"]
         
@@ -175,7 +148,7 @@ class CharacterDetail(APIView):
 
 class DuplicateCharacter(APIView):
     def post(self, request):
-        user_id = request.data.get("user_id")
+        user_id = request.query_params.get("user_id")
         
         poll = Poll.objects.filter(user_id=user_id).order_by('created_at').first()
         poll_id = poll.id
@@ -198,3 +171,8 @@ class DuplicateCharacter(APIView):
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
             prompt.append(max_value_keyword)
+        
+        submit_data = create_submit(poll_id, None, prompt)
+        submit_id = submit_data["character_id"]
+        
+        return Response(submit_data, status=status.HTTP_201_CREATED)
