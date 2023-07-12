@@ -21,11 +21,11 @@ from django.urls import path, include
 from accounts.views import RegisterView, LoginView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/question', include('question.urls')),
-    path('api/characters', include('character.urls')),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
+    path("admin/", admin.site.urls),
+    path("api/question", include("question.urls")),
+    path("api/characters", include("character.urls")),
+    path("register/", RegisterView.as_view(), name="register"),
+    path("login/", LoginView.as_view(), name="login"),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
