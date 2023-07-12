@@ -1,12 +1,6 @@
 from django.db import models
 from question.models import Question, Poll
-<<<<<<< HEAD
 from accounts.models import User
-=======
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
->>>>>>> develop
 
 
 class BaseModel(models.Model):
