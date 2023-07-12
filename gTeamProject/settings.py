@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "question",
     "character",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [
