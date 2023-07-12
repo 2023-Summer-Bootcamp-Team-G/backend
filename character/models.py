@@ -1,8 +1,6 @@
 from django.db import models
 from question.models import Question, Poll
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from accounts.models import User
 
 
 class BaseModel(models.Model):
@@ -22,7 +20,9 @@ class Submit(BaseModel):
 
 
 class Answer(BaseModel):
-    submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE, null=True)
-    question_id = models.ForeignKey(Question, on_delete=models.CASCADE, null=False)
+    submit_id = models.ForeignKey(Submit,
+                                  on_delete=models.CASCADE, null=True)
+    question_id = models.ForeignKey(Question,
+                                    on_delete=models.CASCADE, null=False)
     num = models.IntegerField(null=False)
     content = models.CharField(max_length=200, null=True)

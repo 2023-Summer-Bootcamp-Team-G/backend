@@ -1,7 +1,5 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from accounts.models import User
 
 
 class BaseModel(models.Model):
@@ -14,7 +12,7 @@ class BaseModel(models.Model):
 
 
 class Poll(BaseModel):
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 
 
 class Question(BaseModel):

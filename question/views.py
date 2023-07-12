@@ -1,26 +1,27 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-
+from question.models import Poll
 from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer
+from accounts.models import User
 
 
 def create_poll(user_id):
-    serializer = PollSerializer(data={"user_id": user_id})
-    if serializer.is_valid():
-        poll = serializer.save()
+    try:
+        user = User.objects.get(user_id=user_id)
+        poll = Poll.objects.create(user=user)
         return poll.id
-    else:
+    except User.DoesNotExist:
         return None
 
 
 @api_view(["POST"])
 def question(request):
     user_id = request.query_params.get("user_id")
-    poll_id = create_poll(user_id)  # poll 생성
+    poll_id = create_poll(user_id)
 
     if poll_id is None:
-        return Response({"error": "poll 생성 실패"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "유저가 존재하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
     updated_questions = []
 

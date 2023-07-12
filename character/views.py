@@ -69,7 +69,7 @@ class Characters(APIView):
         result_url = create_image(prompt)
 
         poll = Poll.objects.get(id=poll_id)
-        user_id = poll.user_id.id
+        user_id = poll.user_id
 
         submit_data = {
             "user_id": user_id,
@@ -114,7 +114,7 @@ class Characters(APIView):
         # response data 수정
         submit_data.pop("user_id")
         submit_data.pop("poll_id")
-        submit_data["keyowrd"] = prompt
+        submit_data["keyword"] = prompt
 
         return Response(submit_data, status=status.HTTP_201_CREATED)
 
