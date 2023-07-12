@@ -29,4 +29,4 @@ class AnswerSerializer(serializers.ModelSerializer):
 class AnswerPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = ["question_id", "num", "content"]
+        fields = ["question_id", "submit_id", "num", "content"]

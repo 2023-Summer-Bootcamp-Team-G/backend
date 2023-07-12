@@ -74,26 +74,15 @@ class Characters(APIView):
         answers = request.data.get("answers")
 
         prompt = []
-        question_ids = []
 
-        # 답변 추출 및 DB 저장
+        # 답변 추출
         for i, answer in enumerate(answers, start=1):
             if i <= fixed_question_num:
                 keyword = extract_keyword(answer)
-
-                question_id = answer["question_id"]
-                question_ids.append(question_id)
-
-                data = {"question_id": question_id, "num": i, "content": keyword}
-                answer_serializer = AnswerPostSerializer(data=data)
-                if answer_serializer.is_valid():
-                    answer_serializer.save()
-                else:
-                    return Response(
-                        answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                    )
                 # 추출된 키워드 배열
                 prompt.append(keyword)
+            else:
+                break
 
         # 캐릭터 생성
         result_url = create_image(prompt)
@@ -119,13 +108,29 @@ class Characters(APIView):
         submit_data["character_id"] = submit_instance.id
         submit_id = submit_data["character_id"]
 
-        # Answer - submit_id 업데이트
-        submit = Submit.objects.get(id=submit_id)
-        for question_id in question_ids:
-            answer = Answer.objects.get(question_id=question_id, submit_id__isnull=True)
-            answer.submit_id = submit
-            answer.save()
+        # 답변 저장
+        for i, answer in enumerate(answers, start=1):
+            if i <= fixed_question_num:
+                keyword = prompt[i - 1]
+            else:
+                keyword = answer["answer_text"]
 
+            question_id = answer["question_id"]
+            data = {
+                "question_id": question_id,
+                "submit_id": submit_id,
+                "num": i,
+                "content": keyword,
+            }
+            answer_serializer = AnswerPostSerializer(data=data)
+            if answer_serializer.is_valid():
+                answer_serializer.save()
+            else:
+                return Response(
+                    answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # response data 수정
         submit_data.pop("user_id")
         submit_data.pop("poll_id")
         submit_data["keyowrd"] = prompt
