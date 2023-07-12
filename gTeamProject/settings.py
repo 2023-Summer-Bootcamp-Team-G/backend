@@ -31,6 +31,12 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'accounts.User'
 
+# Django의 인증 시스템에서 사용자를 자연키로 검색하기 위한 설정
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
 # Application definition
 
 INSTALLED_APPS = [
