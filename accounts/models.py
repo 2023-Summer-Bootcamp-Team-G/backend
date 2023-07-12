@@ -18,4 +18,4 @@ class CustomUser(AbstractUser):
         return self.username
 
     class Meta:
-        swappable = 'AUTH_USER_MODEL'
+        swappable = "AUTH_USER_MODEL"
