@@ -38,6 +38,7 @@ class RegisterView(APIView):
         )
 
 
+
 class LoginView(APIView):
     def post(self, request):
         username = request.data.get("username")
@@ -57,5 +58,9 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+<<<<<<< HEAD
         return Response({"message": "Login successful."},
                         tatus=status.HTTP_200_OK)
+=======
+        return Response({'message': 'Login successful.'}, status=status.HTTP_200_OK)
+>>>>>>> develop
