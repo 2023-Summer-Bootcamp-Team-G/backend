@@ -13,11 +13,15 @@ from .serializer import (
 )
 from question.serializer import QuestionSerializer3
 
+import random
+
 fixed_question_num = 3
 
 
 def extract_keyword(answer):
-    return "키워드"
+    keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
+    num = random.randint(0, 4)
+    return keyword[num]
 
 
 def create_image(prompt):
