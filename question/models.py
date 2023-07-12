@@ -12,7 +12,7 @@ class BaseModel(models.Model):
 
 
 class Poll(BaseModel):
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 
 
 class Question(BaseModel):

@@ -38,7 +38,6 @@ class RegisterView(APIView):
         )
 
 
-
 class LoginView(APIView):
     def post(self, request):
         username = request.data.get("username")
