@@ -25,6 +25,37 @@ def create_image(prompt):
     return url
 
 
+def create_submit(poll_id, nick_name, prompt):
+    result_url = create_image(prompt)
+
+    poll = Poll.objects.get(id=poll_id)
+    user_id = poll.user_id.id
+
+    submit_data = {
+        "user_id": user_id,
+        "poll_id": poll_id,
+        "result_url": result_url,
+        "nick_name": nick_name,
+    }
+
+    submit_serializer = SubmitCreateSerializer(data=submit_data)
+    if submit_serializer.is_valid():
+        submit_instance = submit_serializer.save()
+    else:
+        return Response(
+            submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    submit_data["character_id"] = submit_instance.id
+    
+    # response data 수정
+    submit_data.pop("user_id")
+    submit_data.pop("poll_id")
+    submit_data["keyowrd"] = prompt
+    
+    return submit_data
+
+
 class Characters(APIView):
     def get(self, request):
         # 캐릭터 정보 가져오기
@@ -66,29 +97,36 @@ class Characters(APIView):
                 break
 
         # 캐릭터 생성
-        result_url = create_image(prompt)
+        # result_url = create_image(prompt)
 
-        poll = Poll.objects.get(id=poll_id)
-        user_id = poll.user_id.id
+        # poll = Poll.objects.get(id=poll_id)
+        # user_id = poll.user_id.id
 
-        submit_data = {
-            "user_id": user_id,
-            "poll_id": poll_id,
-            "result_url": result_url,
-            "nick_name": nick_name,
-        }
+        # submit_data = {
+        #     "user_id": user_id,
+        #     "poll_id": poll_id,
+        #     "result_url": result_url,
+        #     "nick_name": nick_name,
+        # }
 
-        submit_serializer = SubmitCreateSerializer(data=submit_data)
-        if submit_serializer.is_valid():
-            submit_instance = submit_serializer.save()
-        else:
-            return Response(
-                submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+        # submit_serializer = SubmitCreateSerializer(data=submit_data)
+        # if submit_serializer.is_valid():
+        #     submit_instance = submit_serializer.save()
+        # else:
+        #     return Response(
+        #         submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        #     )
 
-        submit_data["character_id"] = submit_instance.id
+        # submit_data["character_id"] = submit_instance.id
+        # submit_id = submit_data["character_id"]
+        
+        # # response data 수정
+        # submit_data.pop("user_id")
+        # submit_data.pop("poll_id")
+        # submit_data["keyowrd"] = prompt
+        submit_data = create_submit(poll_id, nick_name, prompt)
         submit_id = submit_data["character_id"]
-
+        
         # 답변 저장
         for i, answer in enumerate(answers, start=1):
             if i <= fixed_question_num:
@@ -110,11 +148,6 @@ class Characters(APIView):
                 return Response(
                     answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
-
-        # response data 수정
-        submit_data.pop("user_id")
-        submit_data.pop("poll_id")
-        submit_data["keyowrd"] = prompt
 
         return Response(submit_data, status=status.HTTP_201_CREATED)
 
@@ -138,3 +171,30 @@ class CharacterDetail(APIView):
         response_data["answers"] = answer_data.data
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
+
+class DuplicateCharacter(APIView):
+    def post(self, request):
+        user_id = request.data.get("user_id")
+        
+        poll = Poll.objects.filter(user_id=user_id).order_by('created_at').first()
+        poll_id = poll.id
+        
+        submits = Submit.objects.filter(poll_id=poll_id)
+        
+        keyword_count = [{} for _ in range(fixed_question_num + 1)]
+        
+        for submit in submits:
+            submit_id = submit.id
+            answers = Answer.objects.filter(submit_id=submit_id)
+            for i, answer in enumerate(answers, start=1):
+                if i <= fixed_question_num:
+                    if answer.content in keyword_count[i]:
+                        keyword_count[i][answer.content] += 1
+                    else:
+                        keyword_count[i][answer.content] = 1
+        
+        prompt = []
+        for i in range(1, fixed_question_num + 1):
+            max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
+            prompt.append(max_value_keyword)
