@@ -13,6 +13,9 @@ from .serializer import (
 )
 from question.serializer import QuestionSerializer3
 
+from drf_yasg.utils import swagger_auto_schema
+from .swagger_serializer import GetCharacterListResponseSerializer, GetCharacterListRequestSerializer
+
 import random
 
 fixed_question_num = 3
@@ -59,6 +62,7 @@ def create_submit(poll_id, nick_name, prompt):
 
 
 class Characters(APIView):
+    @swagger_auto_schema(query_serializer=GetCharacterListRequestSerializer, responses={200: GetCharacterListResponseSerializer})
     def get(self, request):
         # 캐릭터 정보 가져오기
         user_id = request.query_params.get("user_id")
