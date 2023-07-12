@@ -25,25 +25,6 @@ def create_image(prompt):
     return url
 
 
-# def create_submit(poll_id, nick_name, prompt):
-# result_url = create_image(prompt)
-
-# poll = Poll.objects.get(id=poll_id)
-# user_id = poll.user_id
-
-# submit_data = {'user_id': user_id, 'poll_id': poll_id, 'result_url': result_url, 'nick_name': nick_name}
-
-# submit_serializer = SubmitCreateSerializer(data=submit_data)
-# if submit_serializer.is_valid():
-#     submit_serializer.save()
-# else:
-#     return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# submit_data['character_id'] = submit_serializer.data['id']
-
-# return submit_data
-
-
 class Characters(APIView):
     def get(self, request):
         # 캐릭터 정보 가져오기
