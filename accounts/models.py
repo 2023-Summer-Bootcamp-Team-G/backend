@@ -1,17 +1,21 @@
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 
-class CustomUser(AbstractUser):
-    nickname = models.CharField(max_length=255, unique=True)
-    email = models.EmailField(max_length=255)
-    password = models.CharField(max_length=255)
 
-    # 추가 필드를 여기에 정의
-    # 예를 들면, 닉네임(nickname)을 저장하는 필드를 추가
-    # nickname = models.CharField(max_length=255)
+class User(AbstractBaseUser, PermissionsMixin):
+    user_id = models.CharField(max_length=200, primary_key=True)
+    nick_name = models.CharField(max_length=200)
+    password = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True)
+
+    USERNAME_FIELD = 'user_id'
+    REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.username
+        return self.id
 
-    class Meta:
-        swappable = 'AUTH_USER_MODEL'
+# table에 last_login, is_superuser 속성이 생기는데 이걸 제거하려고 시도했는데
+# 제거하려면 Django의 인증 시스템에서 사용되는 기능을 직접 구현하고
+# 이건 되게 복잡하고 권장하지 않다고 해서 일단 이렇게 구현은 했어
