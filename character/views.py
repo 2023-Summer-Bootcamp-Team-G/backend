@@ -14,7 +14,7 @@ from .serializer import (
 from question.serializer import QuestionSerializer3
 
 from drf_yasg.utils import swagger_auto_schema
-from .swagger_serializer import GetCharacterListResponseSerializer, GetCharacterListRequestSerializer
+from .swagger_serializer import GetCharacterListResponseSerializer, GetCharacterListRequestSerializer, GetCharacterDetailResponseSerializer
 
 import random
 
@@ -132,6 +132,7 @@ class Characters(APIView):
 
 
 class CharacterDetail(APIView):
+    @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
     def get(self, request, character_id):
         # 캐릭터 상세 정보 가져오기
         submit = Submit.objects.get(id=character_id)
