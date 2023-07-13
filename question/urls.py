@@ -1,4 +1,4 @@
 from django.urls import path
-from .views import question
+from .views import Question
 
-urlpatterns = [path("", question)]
+urlpatterns = [path("", Question.as_view())]
