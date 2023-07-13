@@ -53,7 +53,7 @@ class PostCharacterResponseSerializer(serializers.Serializer):
 
 
 class KeywordCountSerializer(serializers.Serializer):
-    keyword = serializers.IntegerField()
+    keyword = serializers.ListField()
 
 
 class KeywordNumberSerializer(serializers.Serializer):

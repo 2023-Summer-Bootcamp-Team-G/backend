@@ -220,10 +220,13 @@ class KeywordChart(APIView):
         keyword_count = count_keyword(poll_id)
 
         for i in range(fixed_question_num + 1):
+            sorted_keyword_count = dict(sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True))
+            total = sum(sorted_keyword_count.values())
+            for key in (sorted_keyword_count):
+                sorted_keyword_count[key] = [sorted_keyword_count[key]]
+                sorted_keyword_count[key].append(round(sorted_keyword_count[key][0] / total * 100, 2))
             keyword_count[i] = {
-                i: dict(
-                    sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
-                )
+                i: sorted_keyword_count
             }
         keyword_count.pop(0)
 
