@@ -15,8 +15,11 @@ ENV PYTHONUNBUFFERED 1
 # 장고 프로젝트가 도커 이미지에 모두 담긴다.
 COPY . /usr/src/app
 
+RUN apt-get update && apt-get install -y default-libmysqlclient-dev
+
 # requirements.txt에 나열된 라이브러리를 설치
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 CMD ["gunicorn", "gTeamProject.wsgi:application", "--bind", "0.0.0.0:8000"]
+
