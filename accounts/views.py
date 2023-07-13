@@ -53,7 +53,7 @@ class KakaoCallbackView(View):
 class RegisterView(APIView):
     @swagger_auto_schema(
         request_body=PostUserRequestSerializer,
-        responses={201: PostUserResponseSerializer}
+        responses={201: PostUserResponseSerializer},
     )
     def post(self, request):
         username = request.data.get("username")
@@ -83,7 +83,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     @swagger_auto_schema(
         query_serializer=PostLoginRequestSerializer,
-        responses={200: PostLoginResponseSerializer}
+        responses={200: PostLoginResponseSerializer},
     )
     def post(self, request):
         username = request.data.get("username")

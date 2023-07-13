@@ -8,7 +8,7 @@ class QuestionTextSerializer1(serializers.Serializer):
 class PostQuestionRequestSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     questions = QuestionTextSerializer1(many=True)
-    
+
 
 class QuestionIdTextSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()

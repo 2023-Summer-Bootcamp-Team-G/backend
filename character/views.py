@@ -94,7 +94,7 @@ class Characters(APIView):
 
         response_data = {"characters": submit_serializer.data}
         return Response(response_data, status=status.HTTP_200_OK)
-     
+
     @swagger_auto_schema(
         request_body=PostCharacterRequestSerializer,
         responses={201: PostCharacterResponseSerializer},

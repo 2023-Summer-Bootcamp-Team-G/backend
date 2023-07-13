@@ -9,7 +9,7 @@ class PostUserRequestSerializer(serializers.Serializer):
 
 class PostUserResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
-    
+
 
 class PostLoginRequestSerializer(serializers.Serializer):
     username = serializers.CharField()

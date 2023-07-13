@@ -21,7 +21,7 @@ def create_poll(user_id):
 class Question(APIView):
     @swagger_auto_schema(
         request_body=PostQuestionRequestSerializer,
-        responses={201: PostQuestionResponseSerializer}
+        responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
         user_id = request.query_params.get("user_id")
@@ -45,7 +45,8 @@ class Question(APIView):
                 updated_questions.append(question)
         else:
             return Response(
-                {"errors": questions_serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": questions_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # 데이터(질문) 저장 및 응답 정보 생성
