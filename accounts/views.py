@@ -11,6 +11,8 @@ from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostUserRequestSerializer,
     PostUserResponseSerializer,
+    PostLoginRequestSerializer,
+    PostLoginResponseSerializer,
 )
 
 User = get_user_model()
@@ -51,7 +53,7 @@ class KakaoCallbackView(View):
 class RegisterView(APIView):
     @swagger_auto_schema(
         request_body=PostUserRequestSerializer,
-        responses={200: PostUserResponseSerializer}
+        responses={201: PostUserResponseSerializer}
     )
     def post(self, request):
         username = request.data.get("username")
@@ -79,6 +81,10 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    @swagger_auto_schema(
+        query_serializer=PostLoginRequestSerializer,
+        responses={200: PostLoginResponseSerializer}
+    )
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
