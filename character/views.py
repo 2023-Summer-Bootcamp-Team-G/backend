@@ -167,6 +167,10 @@ class CharacterDetail(APIView):
 
 
 class DuplicateCharacter(APIView):
+    @swagger_auto_schema(
+        request_body=GetCharacterListRequestSerializer,
+        responses={201: PostCharacterResponseSerializer},
+    )
     def post(self, request):
         user_id = request.query_params.get("user_id")
 
