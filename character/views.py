@@ -20,6 +20,7 @@ from .swagger_serializer import (
     GetCharacterDetailResponseSerializer,
     PostCharacterRequestSerializer,
     PostCharacterResponseSerializer,
+    GetKeywordChartResponseSerializer,
 )
 
 import random
@@ -180,7 +181,7 @@ def count_keyword(poll_id):
                     keyword_count[i][answer.content] += 1
                 else:
                     keyword_count[i][answer.content] = 1
-    
+
     return keyword_count
 
 
@@ -207,16 +208,24 @@ class DuplicateCharacter(APIView):
 
 
 class KeywordChart(APIView):
+    @swagger_auto_schema(
+        query_serializer=GetCharacterListRequestSerializer,
+        responses={200: GetKeywordChartResponseSerializer},
+    )
     def get(self, request):
         user_id = request.query_params.get("user_id")
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
-        
+
         for i in range(fixed_question_num + 1):
-            keyword_count[i] = {i: dict(sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True))}
+            keyword_count[i] = {
+                i: dict(
+                    sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
+                )
+            }
         keyword_count.pop(0)
-        
+
         Response_data = {"keyword_count": keyword_count}
         return Response(Response_data, status=status.HTTP_200_OK)

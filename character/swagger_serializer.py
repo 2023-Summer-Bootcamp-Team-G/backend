@@ -50,3 +50,15 @@ class PostCharacterResponseSerializer(serializers.Serializer):
     nick_name = serializers.CharField()
     character_id = serializers.IntegerField()
     keyword = serializers.ListField()
+
+
+class KeywordCountSerializer(serializers.Serializer):
+    keyword = serializers.IntegerField()
+
+
+class KeywordNumberSerializer(serializers.Serializer):
+    num = KeywordCountSerializer(many=True)
+
+
+class GetKeywordChartResponseSerializer(serializers.Serializer):
+    keyword_count = KeywordNumberSerializer(many=True)
