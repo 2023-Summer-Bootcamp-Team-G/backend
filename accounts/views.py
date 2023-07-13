@@ -7,6 +7,12 @@ from django.views import View
 from django.conf import settings
 import requests
 
+from drf_yasg.utils import swagger_auto_schema
+from .swagger_serializer import (
+    PostUserRequestSerializer,
+    PostUserResponseSerializer,
+)
+
 User = get_user_model()
 
 
@@ -43,6 +49,10 @@ class KakaoCallbackView(View):
 
 
 class RegisterView(APIView):
+    @swagger_auto_schema(
+        request_body=PostUserRequestSerializer,
+        responses={200: PostUserResponseSerializer}
+    )
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
