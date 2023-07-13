@@ -14,7 +14,13 @@ from .serializer import (
 from question.serializer import QuestionSerializer3
 
 from drf_yasg.utils import swagger_auto_schema
-from .swagger_serializer import GetCharacterListResponseSerializer, GetCharacterListRequestSerializer, GetCharacterDetailResponseSerializer
+from .swagger_serializer import (
+    GetCharacterListResponseSerializer,
+    GetCharacterListRequestSerializer,
+    GetCharacterDetailResponseSerializer,
+    PostCharacterRequestSerializer,
+    PostCharacterResponseSerializer,
+)
 
 import random
 
@@ -62,7 +68,10 @@ def create_submit(poll_id, nick_name, prompt):
 
 
 class Characters(APIView):
-    @swagger_auto_schema(query_serializer=GetCharacterListRequestSerializer, responses={200: GetCharacterListResponseSerializer})
+    @swagger_auto_schema(
+        query_serializer=GetCharacterListRequestSerializer,
+        responses={200: GetCharacterListResponseSerializer},
+    )
     def get(self, request):
         # 캐릭터 정보 가져오기
         user_id = request.query_params.get("user_id")
@@ -85,7 +94,11 @@ class Characters(APIView):
 
         response_data = {"characters": submit_serializer.data}
         return Response(response_data, status=status.HTTP_200_OK)
-
+     
+    @swagger_auto_schema(
+        request_body=PostCharacterRequestSerializer,
+        responses={201: PostCharacterResponseSerializer},
+    )
     def post(self, request):
         poll_id = request.query_params.get("poll_id")
         nick_name = request.data.get("creatorName")
