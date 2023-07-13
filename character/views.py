@@ -166,6 +166,24 @@ class CharacterDetail(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+def count_keyword(poll_id):
+    submits = Submit.objects.filter(poll_id=poll_id)
+
+    keyword_count = [{} for _ in range(fixed_question_num + 1)]
+
+    for submit in submits:
+        submit_id = submit.id
+        answers = Answer.objects.filter(submit_id=submit_id)
+        for i, answer in enumerate(answers, start=1):
+            if i <= fixed_question_num:
+                if answer.content in keyword_count[i]:
+                    keyword_count[i][answer.content] += 1
+                else:
+                    keyword_count[i][answer.content] = 1
+    
+    return keyword_count
+
+
 class DuplicateCharacter(APIView):
     @swagger_auto_schema(
         request_body=GetCharacterListRequestSerializer,
@@ -174,22 +192,9 @@ class DuplicateCharacter(APIView):
     def post(self, request):
         user_id = request.query_params.get("user_id")
 
-        poll = Poll.objects.filter(user_id=user_id).order_by("created_at").first()
+        poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
-
-        submits = Submit.objects.filter(poll_id=poll_id)
-
-        keyword_count = [{} for _ in range(fixed_question_num + 1)]
-
-        for submit in submits:
-            submit_id = submit.id
-            answers = Answer.objects.filter(submit_id=submit_id)
-            for i, answer in enumerate(answers, start=1):
-                if i <= fixed_question_num:
-                    if answer.content in keyword_count[i]:
-                        keyword_count[i][answer.content] += 1
-                    else:
-                        keyword_count[i][answer.content] = 1
+        keyword_count = count_keyword(poll_id)
 
         prompt = []
         for i in range(1, fixed_question_num + 1):
@@ -197,6 +202,21 @@ class DuplicateCharacter(APIView):
             prompt.append(max_value_keyword)
 
         submit_data = create_submit(poll_id, None, prompt)
-        submit_id = submit_data["character_id"]
 
         return Response(submit_data, status=status.HTTP_201_CREATED)
+
+
+class KeywordChart(APIView):
+    def get(self, request):
+        user_id = request.query_params.get("user_id")
+
+        poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
+        poll_id = poll.id
+        keyword_count = count_keyword(poll_id)
+        
+        for i in range(fixed_question_num + 1):
+            keyword_count[i] = {i: dict(sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True))}
+        keyword_count.pop(0)
+        
+        Response_data = {"keyword_count": keyword_count}
+        return Response(Response_data, status=status.HTTP_200_OK)
