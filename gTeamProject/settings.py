@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "question",
     "character",
+    "gTeamProject",
 ]
 
 # Gunicorn 설정
