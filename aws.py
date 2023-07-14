@@ -2,6 +2,10 @@ import os
 import json
 import boto3
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class AWSManager:
     _session = None
@@ -15,9 +19,9 @@ class AWSManager:
                 cls._session = boto3.Session()
             else:
                 cls._session = boto3.Session(
-                    region_name=os.environ.get("REGION_NAME"),
-                    aws_access_key_id=os.environ.get("AWS_SECRET_ACCESS_KEY"),
-                    aws_secret_access_key=os.environ.get("AWS_SECRET_SECRET_KEY"),
+                    region_name=os.getenv("REGION_NAME"),
+                    aws_access_key_id=os.getenv("AWS_SECRET_ACCESS_KEY"),
+                    aws_secret_access_key=os.getenv("AWS_SECRET_SECRET_KEY"),
                 )
 
         return cls._session
