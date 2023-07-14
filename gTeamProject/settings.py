@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,22 +19,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-
-SECRET_KEY = "django-insecure-h%hj*4^5(1r84@v!=v=0)=^2@k_q50$c=eh61kpr=&p0idlwkn"
+SECRET_KEY = AWSManager.get_secret("django")["SECRET_KEY"]
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]  # 검토 필요
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = "accounts.User"
 
 # Django의 인증 시스템에서 사용자를 자연키로 검색하기 위한 설정
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 
@@ -89,14 +87,16 @@ WSGI_APPLICATION = "gTeamProject.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+db_secret = AWSManager.get_secret("teacheer-db")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "teacheer",
-        "USER": "admin",
-        "PASSWORD": "teamgbe13579",
-        "HOST": "teacheer-db.cz3svk2xsnsk.ap-northeast-2.rds.amazonaws.com",
-        "PORT": "3306",
+        "NAME": db_secret["dbname"],
+        "USER": db_secret["username"],
+        "PASSWORD": db_secret["password"],
+        "HOST": db_secret["host"],
+        "PORT": db_secret["port"],
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
         },
@@ -146,7 +146,3 @@ STATIC_ROOT = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ORIGIN_ALLOW_ALL = True
-
-# CORS_ORIGIN_WHITELIST = (
-#     "http://127.0.0.1:8000"
-# )
