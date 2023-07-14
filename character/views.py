@@ -43,7 +43,7 @@ def create_submit(poll_id, nick_name, prompt):
     result_url = create_image(prompt)
 
     poll = Poll.objects.get(id=poll_id)
-    user_id = poll.user_id.id
+    user_id = poll.user_id
 
     submit_data = {
         "user_id": user_id,
