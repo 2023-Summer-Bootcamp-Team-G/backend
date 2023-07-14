@@ -21,4 +21,7 @@ RUN apt-get update && apt-get install -y default-libmysqlclient-dev
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+# Docker 컨테이너를 시작할 때 Gunicorn 웹 서버를 실행하고 Django 애플리케이션을 서비스하기 위해 사용
+# --bind "0.0.0.0:8000"은 Gunicorn이 0.0.0.0 IP 주소와 8000 포트에 바인딩되도록 지정
+# 이는 외부로부터의 모든 IP로부터의 요청을 허용하여 외부에서 애플리케이션에 접근할 수 있도록 gksek.
 CMD ["gunicorn", "gTeamProject.wsgi:application", "--bind", "0.0.0.0:8000"]

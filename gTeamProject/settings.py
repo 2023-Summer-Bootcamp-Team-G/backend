@@ -1,10 +1,11 @@
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECRET_KEY -> 임의로 만들어져 있는 키
-SECRET_KEY = "django-insecure-h%hj*4^5(1r84@v!=v=0)=^2@k_q50$c=eh61kpr=&p0idlwkn"
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h%hj*4^5(1r84@v!=v=0)=^2@k_q50$c=eh61kpr=&p0idlwkn')
 
 
 # Local에서 개발할 경우 1, 그렇지 않은 경우 0 #
