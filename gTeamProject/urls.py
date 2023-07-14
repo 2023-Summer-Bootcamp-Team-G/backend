@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include, re_path
 from accounts.views import RegisterView, LoginView
+from character.views import nlpAPI
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -37,8 +38,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/question", include("question.urls")),
     path("api/characters", include("character.urls")),
-    path("register/", RegisterView.as_view(), name="register"),
-    path("login/", LoginView.as_view(), name="login"),
+    path("api/register/", RegisterView.as_view(), name="register"),
+    path("api/login/", LoginView.as_view(), name="login"),
+    path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

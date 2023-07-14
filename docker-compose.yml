@@ -1,0 +1,22 @@
+# 배포용 도커
+# docker-compose 버전 설정, 따로 설정할게 없다면 3으로 고정
+version: '3'
+
+services:
+  # 실행할 서비스 - web
+  web:
+    # Dockerfile의 위치, 현재 폴더를 build
+    build: .
+
+    command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
+
+    # 로컬 프로젝트 폴더와 도커의 폴더를 연결
+    volumes:
+      - ./:/usr/src/app/
+
+    ports:
+      - "8000:8000"
+
+    # 개발 환경 저장
+    env_file:
+      - ./.env.prod #개발 환경 설정 파일은 .env.dev 대신 env.prod 권장

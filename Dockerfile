@@ -1,50 +1,15 @@
-# syntax=docker/dockerfile:1
+# 파이썬 버전
+FROM python:3.10.12
 
-ARG PYTHON_VERSION=3.9.9
-FROM python:${PYTHON_VERSION}-slim as base
+# 프로젝트의 작업 폴더 지정
+WORKDIR /usr/src/app
 
-# Prevents Python from writing pyc files.
-ENV PYTHONDONTWRITEBYTECODE=1
+# Python은 가끔 소스 코드를 컴파일할 때 확장자가 .pyc인 파일을 생성한다.
+# 도커를 이용할 때, .pyc 파일이 필요하지 않으므로 .pyc 파일을 생성하지 않도록 한다.
+ENV PYTHONDONTWRITEBYTECODE 1
 
-# Keeps Python from buffering stdout and stderr to avoid situations where
-# the application crashes without emitting any logs due to buffering.
-ENV PYTHONUNBUFFERED=1
-
-## -----------------------------------------------------
-##EC2에서 돌릴 경우
-#
-#RUN apt-get -y update
-#RUN apt-get -y install vim
-#
-## 작업 디렉토리 생성
-#RUN mkdir /srv/docker-server
-#ADD . /src/docker-server
-#
-#WORKDIR /srv/docker-server
-#
-### 의존성 패키지 설치
-##RUN apt install --upgrade pip
-##RUN apt install -r requirements.txt
-#
-## -----------------------------------------------------
-
-##local에서 돌릴 경우
-#ADD . D:/Teacheer/Docker
-## 작업 디렉토리 설정
-#WORKDIR D:/Teacheer/Docker
-#
-## 의존성 패키지 설치
-#COPY requirements.txt ./Docker/requirements.txt
-#COPY manage.py ./Docker/manage.py
-#
-##RUN pip install --upgrade pip # pip 업글
-##RUN pip install -r requirements.txt # 필수 패키지 설치
-#
-## 소스 코드 복사
-#COPY . ./Docker
-
-# WORKDIR /mainapp
-WORKDIR /app
+# Python 로그가 버퍼링 없이 출력
+ENV PYTHONUNBUFFERED 1
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
@@ -70,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-COPY . .
+COPY . /usr/src/app
 
 RUN mkdir static
 RUN python manage.py collectstatic
@@ -81,5 +46,9 @@ USER appuser
 
 EXPOSE 8000
 
+# Docker 컨테이너를 시작할 때 Gunicorn 웹 서버를 실행하고 Django 애플리케이션을 서비스하기 위해 사용
+# --bind "0.0.0.0:8000"은 Gunicorn이 0.0.0.0 IP 주소와 8000 포트에 바인딩되도록 지정
+# 이는 외부로부터의 모든 IP로부터의 요청을 허용하여 외부에서 애플리케이션에 접근할 수 있도록 gksek.
+CMD ["gunicorn", "gTeamProject.wsgi:application", "--bind", "0.0.0.0:8000"]
 # CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 CMD gunicorn 'gTeamProject.wsgi' --bind=0.0.0.0:8000

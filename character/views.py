@@ -1,6 +1,11 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import JsonResponse
+from gTeamProject.settings import extract_key_phrases
+import os
+from dotenv import load_dotenv
+from django.conf import settings
 
 from .models import Submit, Answer
 from question.models import Question, Poll
@@ -26,6 +31,28 @@ from .swagger_serializer import (
 import random
 
 fixed_question_num = 2
+
+# .env.dev 파일의 경로 설정
+dotenv_path = os.path.join(settings.BASE_DIR, '.env.dev')
+
+# .env.dev 파일 로드
+load_dotenv(dotenv_path)
+
+# AWS 액세스 키와 시크릿 액세스 키 가져오기
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_SECRET_SECRET_KEY = os.getenv('AWS_SECRET_SECRET_KEY')
+
+
+class nlpAPI(APIView):
+    def get(self, request):
+        text = request.GET.get('text', '')
+        key_phrases = extract_key_phrases(text)
+        return JsonResponse({'key_phrases': key_phrases})
+    
+    def post(self, request):
+        text = request.data.get('text', '')
+        key_phrases = extract_key_phrases(text)
+        return JsonResponse({'key_phrases': key_phrases})
 
 
 def extract_keyword(answer):
