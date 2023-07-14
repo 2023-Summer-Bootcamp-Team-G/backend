@@ -25,7 +25,7 @@ from .swagger_serializer import (
 
 import random
 
-fixed_question_num = 3
+fixed_question_num = 2
 
 
 def extract_keyword(answer):
