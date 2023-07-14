@@ -8,10 +8,22 @@ from django.contrib.auth import authenticate, login
 # login은 인증된 사용즈랄 로그인 처리, 세션 관리, 필요 데이터 저장해서
 # 사용자를 로그인 상태로 유지하는 내장 함수
 
+from drf_yasg.utils import swagger_auto_schema
+from .swagger_serializer import (
+    PostUserRequestSerializer,
+    PostUserResponseSerializer,
+    PostLoginRequestSerializer,
+    PostLoginResponseSerializer,
+)
+
 User = get_user_model()
 
 
 class RegisterView(APIView):
+    @swagger_auto_schema(
+        request_body=PostUserRequestSerializer,
+        responses={201: PostUserResponseSerializer},
+    )
     def post(self, request):
         nick_name = request.data.get("nick_name")
         user_id = request.data.get("user_id")
@@ -44,6 +56,10 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    @swagger_auto_schema(
+        query_serializer=PostLoginRequestSerializer,
+        responses={200: PostLoginResponseSerializer},
+    )
     def post(self, request):
         username = request.data.get("user_id")
         password = request.data.get("password")

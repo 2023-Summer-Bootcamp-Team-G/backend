@@ -11,17 +11,44 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # Python 로그가 버퍼링 없이 출력
 ENV PYTHONUNBUFFERED 1
 
-# 로컬 컴퓨터의 현재 위치(Dockerfile이 있는 경로)의 모든 파일을 전부 WORKDIR로 복사
-# 장고 프로젝트가 도커 이미지에 모두 담긴다.
+# Create a non-privileged user that the app will run under.
+# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    appuser
+
+RUN apt-get update \
+    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download dependencies as a separate step to take advantage of Docker's caching.
+# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
+# Leverage a bind mount to requirements.txt to avoid having to copy them into
+# into this layer.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python -m pip install -r requirements.txt
+
 COPY . /usr/src/app
 
-RUN apt-get update && apt-get install -y default-libmysqlclient-dev
+RUN mkdir static
+RUN python manage.py collectstatic
 
-# requirements.txt에 나열된 라이브러리를 설치
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+USER appuser
+
+# COPY . .
+
+EXPOSE 8000
 
 # Docker 컨테이너를 시작할 때 Gunicorn 웹 서버를 실행하고 Django 애플리케이션을 서비스하기 위해 사용
 # --bind "0.0.0.0:8000"은 Gunicorn이 0.0.0.0 IP 주소와 8000 포트에 바인딩되도록 지정
 # 이는 외부로부터의 모든 IP로부터의 요청을 허용하여 외부에서 애플리케이션에 접근할 수 있도록 gksek.
 CMD ["gunicorn", "gTeamProject.wsgi:application", "--bind", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD gunicorn 'gTeamProject.wsgi' --bind=0.0.0.0:8000
