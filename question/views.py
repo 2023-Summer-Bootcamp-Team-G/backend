@@ -7,14 +7,18 @@ from .swagger_serializer import (
     PostQuestionRequestSerializer,
     PostQuestionResponseSerializer,
 )
+from rest_framework.decorators import api_view
+from question.models import Poll
+from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer
+from accounts.models import User
 
 
 def create_poll(user_id):
-    serializer = PollSerializer(data={"user_id": user_id})
-    if serializer.is_valid():
-        poll = serializer.save()
+    try:
+        user = User.objects.get(user_id=user_id)
+        poll = Poll.objects.create(user=user)
         return poll.id
-    else:
+    except User.DoesNotExist:
         return None
 
 
