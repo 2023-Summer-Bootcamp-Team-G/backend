@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import boto3
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +38,19 @@ INSTALLED_APPS = [
     "character",
     "gTeamProject",
 ]
+
+# AWS Comprehend 클라이언트를 생성
+comprehend = boto3.client('comprehend', region_name='ap-northeast-2')
+aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+
+def extract_key_phrases(text):
+    text_encoded = text.encode('utf-8').decode('unicode_escape')
+    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode='en')
+    key_phrases = [phrase['Text'] for phrase in response['KeyPhrases']]
+    return key_phrases
+
 
 # Gunicorn 설정
 INSTALLED_APPS += ['gunicorn']

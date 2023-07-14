@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include
 from accounts.views import RegisterView, LoginView
+from character.views import nlpAPI
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,6 +27,7 @@ urlpatterns = [
     path("api/characters", include("character.urls")),
     path("api/register/", RegisterView.as_view(), name="register"),
     path("api/login/", LoginView.as_view(), name="login"),
+    path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -180,3 +180,4 @@ fabric.properties
 .vscode/
 .env.prod
 .env.prod.db
+.env.dev
