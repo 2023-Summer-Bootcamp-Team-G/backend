@@ -57,7 +57,7 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     @swagger_auto_schema(
-        query_serializer=PostLoginRequestSerializer,
+        request_body=PostLoginRequestSerializer,
         responses={200: PostLoginResponseSerializer},
     )
     def post(self, request):
