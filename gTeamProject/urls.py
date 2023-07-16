@@ -36,8 +36,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/question", include("question.urls")),
-    path("api/characters", include("character.urls")),
+    path("api/question/", include("question.urls")),
+    path("api/characters/", include("character.urls")),
     path("api/register/", RegisterView.as_view(), name="register"),
     path("api/login/", LoginView.as_view(), name="login"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),

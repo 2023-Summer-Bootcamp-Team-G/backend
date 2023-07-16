@@ -128,7 +128,7 @@ class Characters(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        poll_id = request.query_params.get("poll_id")
+        poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
 
