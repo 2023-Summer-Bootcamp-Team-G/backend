@@ -218,7 +218,7 @@ class DuplicateCharacter(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        user_id = request.query_params.get("user_id")
+        user_id = request.data.get("user_id")
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
