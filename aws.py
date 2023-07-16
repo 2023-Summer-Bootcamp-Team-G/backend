@@ -22,8 +22,6 @@ class AWSManager:
                     aws_secret_access_key=os.getenv("AWS_SECRET_SECRET_KEY"),
                 )
 
-                # print(cls._session.region_name)
-
         return cls._session
 
     @classmethod
