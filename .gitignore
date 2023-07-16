@@ -181,3 +181,6 @@ fabric.properties
 .env.prod
 .env.prod.db
 .env.dev
+
+.DS_Store
+static/
