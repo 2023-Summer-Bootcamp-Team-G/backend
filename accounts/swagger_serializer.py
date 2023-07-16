@@ -3,8 +3,8 @@ from rest_framework import serializers
 
 class PostUserRequestSerializer(serializers.Serializer):
     nick_name = serializers.CharField()
+    user_id = serializers.EmailField()
     password = serializers.CharField()
-    email = serializers.EmailField()
 
 
 class PostUserResponseSerializer(serializers.Serializer):
