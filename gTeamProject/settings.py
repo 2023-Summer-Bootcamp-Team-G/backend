@@ -45,22 +45,22 @@ INSTALLED_APPS = [
 ]
 
 # AWS Comprehend 클라이언트를 생성
-comprehend = boto3.client('comprehend', region_name='ap-northeast-2')
-aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
-aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+comprehend = AWSManager._session.client("comprehend", region_name="ap-northeast-2")
+# aws_access_key_id=os.environ.get("AWS_SECRET_ACCESS_KEY")
+# aws_secret_access_key=os.environ.get("AWS_SECRET_SECRET_KEY")
 
 
 def extract_key_phrases(text):
-    text_encoded = text.encode('utf-8').decode('unicode_escape')
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode='en')
-    key_phrases = [phrase['Text'] for phrase in response['KeyPhrases']]
+    text_encoded = text.encode("utf-8").decode("unicode_escape")
+    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
+    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
     return key_phrases
 
 
 # Gunicorn 설정
-INSTALLED_APPS += ['gunicorn']
+INSTALLED_APPS += ["gunicorn"]
 # Gunicorn을 웹 서버로 사용하기 위해 WSGI_APPLICATION 설정
-WSGI_APPLICATION = 'gTeamProject.wsgi.application'
+WSGI_APPLICATION = "gTeamProject.wsgi.application"
 # Gunicorn이 사용할 워커 프로세스 수 설정
 # 예시: 워커 프로세스를 4개로 설정
 # NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌

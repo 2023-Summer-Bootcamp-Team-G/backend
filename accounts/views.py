@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
+
 # authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
 # 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
 # login은 인증된 사용즈랄 로그인 처리, 세션 관리, 필요 데이터 저장해서
@@ -50,8 +51,7 @@ class RegisterView(APIView):
         user.save()
 
         return Response(
-            {"message": "User registered successfully."},
-            status=status.HTTP_201_CREATED
+            {"message": "User registered successfully."}, status=status.HTTP_201_CREATED
         )
 
 
@@ -80,7 +80,4 @@ class LoginView(APIView):
 
         login(request, user)
 
-        return Response(
-            {"message": "Login successful."},
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)

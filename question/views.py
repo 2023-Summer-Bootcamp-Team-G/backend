@@ -28,7 +28,7 @@ class Question(APIView):
         responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
-        user_id = request.query_params.get("user_id")
+        user_id = request.data.get("user_id")
         poll_id = create_poll(user_id)  # poll 생성
 
         if poll_id is None:

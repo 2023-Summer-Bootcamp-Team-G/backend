@@ -33,26 +33,26 @@ import random
 fixed_question_num = 2
 
 # .env.dev 파일의 경로 설정
-dotenv_path = os.path.join(settings.BASE_DIR, '.env.dev')
+dotenv_path = os.path.join(settings.BASE_DIR, ".env.dev")
 
 # .env.dev 파일 로드
 load_dotenv(dotenv_path)
 
 # AWS 액세스 키와 시크릿 액세스 키 가져오기
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_SECRET_SECRET_KEY = os.getenv('AWS_SECRET_SECRET_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_SECRET_SECRET_KEY = os.getenv("AWS_SECRET_SECRET_KEY")
 
 
 class nlpAPI(APIView):
     def get(self, request):
-        text = request.GET.get('text', '')
+        text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({'key_phrases': key_phrases})
-    
+        return JsonResponse({"key_phrases": key_phrases})
+
     def post(self, request):
-        text = request.data.get('text', '')
+        text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({'key_phrases': key_phrases})
+        return JsonResponse({"key_phrases": key_phrases})
 
 
 def extract_keyword(answer):
@@ -247,14 +247,16 @@ class KeywordChart(APIView):
         keyword_count = count_keyword(poll_id)
 
         for i in range(fixed_question_num + 1):
-            sorted_keyword_count = dict(sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True))
+            sorted_keyword_count = dict(
+                sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
+            )
             total = sum(sorted_keyword_count.values())
-            for key in (sorted_keyword_count):
+            for key in sorted_keyword_count:
                 sorted_keyword_count[key] = [sorted_keyword_count[key]]
-                sorted_keyword_count[key].append(round(sorted_keyword_count[key][0] / total * 100, 2))
-            keyword_count[i] = {
-                i: sorted_keyword_count
-            }
+                sorted_keyword_count[key].append(
+                    round(sorted_keyword_count[key][0] / total * 100, 2)
+                )
+            keyword_count[i] = {i: sorted_keyword_count}
         keyword_count.pop(0)
 
         Response_data = {"keyword_count": keyword_count}

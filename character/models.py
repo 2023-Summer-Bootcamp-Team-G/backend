@@ -20,9 +20,7 @@ class Submit(BaseModel):
 
 
 class Answer(BaseModel):
-    submit_id = models.ForeignKey(Submit,
-                                  on_delete=models.CASCADE, null=True)
-    question_id = models.ForeignKey(Question,
-                                    on_delete=models.CASCADE, null=False)
+    submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE, null=True)
+    question_id = models.ForeignKey(Question, on_delete=models.CASCADE, null=False)
     num = models.IntegerField(null=False)
     content = models.CharField(max_length=200, null=True)
