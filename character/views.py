@@ -2,13 +2,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
+import random
 
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
-
-import os
-from dotenv import load_dotenv
-from django.conf import settings
 
 from .models import Submit, Answer
 from question.models import Question, Poll
@@ -31,27 +28,14 @@ from .swagger_serializer import (
     GetKeywordChartResponseSerializer,
 )
 
-import random
-
 fixed_question_num = 2
-
-# # .env.dev 파일의 경로 설정
-# dotenv_path = os.path.join(settings.BASE_DIR, ".env.dev")
-
-# # .env.dev 파일 로드
-# load_dotenv(dotenv_path)
-
-# AWS 액세스 키와 시크릿 액세스 키 가져오기
-# AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-# AWS_SECRET_SECRET_KEY = os.getenv("AWS_SECRET_SECRET_KEY")
 
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
 
 def extract_key_phrases(text):
-    text_encoded = text.encode("utf-8").decode("unicode_escape")
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
+    response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
     key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
     return key_phrases
 
@@ -60,12 +44,12 @@ class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
 
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
 
 
 def extract_keyword(answer):
