@@ -19,4 +19,38 @@ services:
 
     # 개발환경 저장
     env_file:
-      - ./.env.dev
+      - ./.env
+
+  rabbit:
+    container_name: rabbitmq
+    hostname: rabbit
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    environment:
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    ports:
+    # 메시지 대기열을 사용하려는 서버의 경우에만 5672필요
+      - 5672:5672
+    # management
+      - 15672:15672
+    expose:
+      - "15672"
+  
+  celery_worker:
+    container_name: celery_worker
+    build:
+      context: ./
+    volumes:
+      - ./:/usr/src/app/
+    depends_on:
+      - rabbit
+      - redis
+    command: sh -c "celery -A gTeamProject worker --loglevel=info"
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    hostname: redis
+    ports:
+      - "6379:6379"
