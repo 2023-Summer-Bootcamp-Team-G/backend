@@ -6,6 +6,8 @@ from .serializer import (
 )
 import random
 
+fixed_question_num = 2
+
 
 def extract_keyword(answer):
     keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]

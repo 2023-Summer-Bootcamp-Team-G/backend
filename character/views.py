@@ -29,8 +29,8 @@ from .swagger_serializer import (
     GetKeywordChartResponseSerializer,
 )
 from .tasks import create_character
-
-fixed_question_num = 2
+from .utils import extract_keyword, create_submit
+from .utils import fixed_question_num
 
 # # .env.dev 파일 로드
 # load_dotenv(dotenv_path)
