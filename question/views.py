@@ -1,14 +1,14 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer
+from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer, QuestionSerializer3
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostQuestionRequestSerializer,
     PostQuestionResponseSerializer,
 )
 from rest_framework.decorators import api_view
-from question.models import Poll
+from question.models import Poll, Question
 from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer
 from accounts.models import User
 
@@ -22,7 +22,16 @@ def create_poll(user_id):
         return None
 
 
-class Question(APIView):
+class Questions(APIView):
+    def get(self, request):
+        poll_id = request.GET.get("poll_id")
+        poll = Poll.objects.get(id=poll_id)
+        questions = Question.objects.filter(poll_id=poll)
+        
+        questions_serializer = QuestionSerializer3(questions, many=True)
+        response = {"questions": questions_serializer.data}
+        return Response(response, status=status.HTTP_200_OK)
+    
     @swagger_auto_schema(
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
