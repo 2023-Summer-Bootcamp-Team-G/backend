@@ -13,11 +13,9 @@ class AWSManager:
     @classmethod
     def get_session(cls):
         if not cls._session:
-            env = os.environ.get("SERVER_NAME")
+            cls._session = boto3.Session()
 
-            if env == "EC2":
-                cls._session = boto3.Session()
-            else:
+            if cls._session.region_name is None:
                 cls._session = boto3.Session(
                     region_name=os.getenv("REGION_NAME"),
                     aws_access_key_id=os.getenv("AWS_SECRET_ACCESS_KEY"),
