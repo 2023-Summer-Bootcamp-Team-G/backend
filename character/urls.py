@@ -1,5 +1,12 @@
 from django.urls import path
-from .views import Characters, CharacterDetail, nlpAPI, DuplicateCharacter, KeywordChart, Task
+from .views import (
+    Characters,
+    CharacterDetail,
+    nlpAPI,
+    DuplicateCharacter,
+    KeywordChart,
+    Task,
+)
 
 urlpatterns = [
     path("", Characters.as_view()),
