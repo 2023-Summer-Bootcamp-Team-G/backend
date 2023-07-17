@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "corsheaders",
     "django_celery_results",
+    "django_redis",
 ]
 
 # Gunicorn 설정
@@ -148,16 +149,16 @@ CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
 
 
 # CELERY SETTINGS
-CELERY_TIMEZONE = 'Asia/Seoul'
-CELERY_BROKER_URL = 'amqp://rabbitmq:5672'
-CELERY_RESULT_BACKEND = 'redis://redis:6379'
+CELERY_TIMEZONE = "Asia/Seoul"
+CELERY_BROKER_URL = "amqp://rabbitmq:5672"
+CELERY_RESULT_BACKEND = "redis://redis:6379"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis:6379',  # redis_server: docker container이름
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379",  # redis_server: docker container이름
     }
 }
