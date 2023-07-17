@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "question",
     "character",
-    "gTeamProject",  # ??
     "drf_yasg",
     "corsheaders",
 ]

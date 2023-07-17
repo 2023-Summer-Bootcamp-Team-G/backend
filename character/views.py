@@ -35,15 +35,8 @@ import random
 
 fixed_question_num = 2
 
-# # .env.dev 파일의 경로 설정
-# dotenv_path = os.path.join(settings.BASE_DIR, ".env.dev")
-
 # # .env.dev 파일 로드
 # load_dotenv(dotenv_path)
-
-# AWS 액세스 키와 시크릿 액세스 키 가져오기
-# AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-# AWS_SECRET_SECRET_KEY = os.getenv("AWS_SECRET_SECRET_KEY")
 
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
@@ -141,7 +134,7 @@ class Characters(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        poll_id = request.query_params.get("poll_id")
+        poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
 
@@ -231,7 +224,7 @@ class DuplicateCharacter(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        user_id = request.query_params.get("user_id")
+        user_id = request.data.get("user_id")
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
