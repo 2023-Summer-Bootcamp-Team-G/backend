@@ -34,9 +34,9 @@ fixed_question_num = 2
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
 
-def extract_key_phrases(text):
+def extract_key_phrases(text, min_score=0.9):
     response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
+    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"] if phrase["Score"] >= min_score]
     return key_phrases
 
 
