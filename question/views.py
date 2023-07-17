@@ -78,5 +78,5 @@ class Questions(APIView):
             return Response(
                 {"error": updated_serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
-        response = {"questions": response_data}
+        response = {"poll_id": poll_id, "questions": response_data}
         return Response(response, status=status.HTTP_201_CREATED)
