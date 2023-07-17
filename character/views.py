@@ -36,10 +36,39 @@ comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManage
 
 
 def extract_key_phrases(text):
-    text_encoded = text.encode("utf-8").decode("unicode_escape")
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
+    response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
     key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
     return key_phrases
+
+
+def translate_text(text):
+    papago_client_id, papago_client_secret = get_papago_api_key()
+
+    # 파파고 API 요청 URL
+    url = "https://openapi.naver.com/v1/papago/n2mt"
+
+    # 번역할 텍스트와 언어 코드 설정
+    data = {
+        "source": "ko",
+        "target": "en",
+        "text": text
+    }
+
+    # 파파고 API에 POST 요청 보내기
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Naver-Client-Id": papago_client_id,
+        "X-Naver-Client-Secret": papago_client_secret
+    }
+    response = requests.post(url, headers=headers, data=data)
+
+    # 응답 결과 확인
+    if response.status_code == 200:
+        result = response.json()
+        translated_text = result["message"]["result"]["translatedText"]
+        return translated_text
+    else:
+        raise Exception("파파고 API 요청에 실패했습니다.")
 
 
 def translate_to_korean(text):
@@ -73,34 +102,28 @@ def translate_to_korean(text):
 
 
 class nlpAPI(APIView):
-    def get(self, request):
-        text = request.GET.get("text", "")
-        key_phrases = extract_key_phrases(text)
-
-        translated_key_phrases = []
-        for phrase in key_phrases:
-            translated_phrase = translate_to_korean(phrase)
-            translated_key_phrases.append(translated_phrase)
-
-        return JsonResponse({"key_phrases": translated_key_phrases}, json_dumps_params={"ensure_ascii": False})
-
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
 
         translated_key_phrases = []
         for phrase in key_phrases:
-            translated_phrase = translate_to_korean(phrase)
+            translated_phrase = translate_text(phrase)
             translated_key_phrases.append(translated_phrase)
 
-        return JsonResponse({"key_phrases": translated_key_phrases}, json_dumps_params={"ensure_ascii": False})
+        translated_key_phrases_korean = []
+        for phrase in translated_key_phrases:
+            translated_phrase_korean = translate_to_korean(phrase)
+            translated_key_phrases_korean.append(translated_phrase_korean)
+
+        return JsonResponse({"translated_keywords": translated_key_phrases_korean}, json_dumps_params={"ensure_ascii": False})
 
 
 def get_papago_api_key():
     secret_name = "papagoAPI"
     region_name = "ap-northeast-2"
     client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
-    
+
     try:
         response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
