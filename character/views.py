@@ -31,6 +31,7 @@ from .swagger_serializer import (
 from .tasks import create_character
 from .utils import extract_keyword, create_submit
 from .utils import fixed_question_num
+from celery.result import AsyncResult
 
 # # .env.dev 파일 로드
 # load_dotenv(dotenv_path)
@@ -268,3 +269,13 @@ class KeywordChart(APIView):
 
         Response_data = {"keyword_count": keyword_count}
         return Response(Response_data, status=status.HTTP_200_OK)
+
+
+class Task(APIView):
+    def get(self, request, task_id):
+        task = AsyncResult(task_id)
+        if not task.ready():
+            return Response({"status": task.state}, status=status.HTTP_200_OK)
+
+        response_data = task.get()["submit_data"]
+        return Response(response_data, status=status.HTTP_200_OK)
