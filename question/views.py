@@ -6,6 +6,8 @@ from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostQuestionRequestSerializer,
     PostQuestionResponseSerializer,
+    GetQuestionResponseSerializer,
+    GetQuestionRequestSerializer
 )
 from rest_framework.decorators import api_view
 from question.models import Poll, Question
@@ -23,6 +25,9 @@ def create_poll(user_id):
 
 
 class Questions(APIView):
+    @swagger_auto_schema(
+        query_serializer=GetQuestionRequestSerializer,
+        responses={200: GetQuestionResponseSerializer},)
     def get(self, request):
         poll_id = request.GET.get("poll_id")
         poll = Poll.objects.get(id=poll_id)
