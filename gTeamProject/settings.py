@@ -1,8 +1,5 @@
 from pathlib import Path
 
-import os
-import boto3
-
 from aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -13,8 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = AWSManager.get_secret("django")["SECRET_KEY"]
 
 
-# Local에서 개발할 경우 1, 그렇지 않은 경우 0 #
-DEBUG = True
+DEBUG = True  # Set False when production!!
 
 ALLOWED_HOSTS = ["*"]  # 검토 필요
 
@@ -39,23 +35,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "question",
     "character",
-    "gTeamProject",
     "drf_yasg",
     "corsheaders",
 ]
-
-# AWS Comprehend 클라이언트를 생성
-comprehend = AWSManager._session.client("comprehend", region_name="ap-northeast-2")
-# aws_access_key_id=os.environ.get("AWS_SECRET_ACCESS_KEY")
-# aws_secret_access_key=os.environ.get("AWS_SECRET_SECRET_KEY")
-
-
-def extract_key_phrases(text):
-    text_encoded = text.encode("utf-8").decode("unicode_escape")
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
-    return key_phrases
-
 
 # Gunicorn 설정
 INSTALLED_APPS += ["gunicorn"]
@@ -161,4 +143,4 @@ STATIC_ROOT = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요

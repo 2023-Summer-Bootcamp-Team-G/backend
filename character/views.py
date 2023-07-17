@@ -2,7 +2,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
-from gTeamProject.settings import extract_key_phrases
+
+# from gTeamProject.settings import extract_key_phrases
+from aws import AWSManager
+
 import os
 from dotenv import load_dotenv
 from django.conf import settings
@@ -32,15 +35,18 @@ import random
 
 fixed_question_num = 2
 
-# .env.dev 파일의 경로 설정
-dotenv_path = os.path.join(settings.BASE_DIR, ".env.dev")
+# # .env.dev 파일 로드
+# load_dotenv(dotenv_path)
 
-# .env.dev 파일 로드
-load_dotenv(dotenv_path)
+# AWS Comprehend 클라이언트를 생성
+comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
-# AWS 액세스 키와 시크릿 액세스 키 가져오기
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_SECRET_SECRET_KEY = os.getenv("AWS_SECRET_SECRET_KEY")
+
+def extract_key_phrases(text):
+    text_encoded = text.encode("utf-8").decode("unicode_escape")
+    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
+    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
+    return key_phrases
 
 
 class nlpAPI(APIView):
