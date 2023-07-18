@@ -29,8 +29,16 @@ RUN adduser \
     appuser
 
 RUN apt-get update \
-    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
+    && apt-get install -y gcc default-libmysqlclient-dev pkg-config
+
+# Install OpenJDK
+RUN apt-get update \
+    && apt-get install -y default-jdk \
     && rm -rf /var/lib/apt/lists/*
+
+# Set Java environment variables
+ENV JAVA_HOME /usr/lib/jvm/default-java
+ENV PATH $JAVA_HOME/bin:$PATH
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
