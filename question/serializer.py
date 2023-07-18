@@ -22,8 +22,8 @@ class QuestionTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ["question_text"]
-        
-        
+
+
 class QuestionIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question

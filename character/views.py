@@ -152,7 +152,7 @@ class Characters(APIView):
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt)
         submit_id = submit_data["character_id"]
-        
+
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
         question_id_serializer = QuestionIdSerializer(question, many=True)

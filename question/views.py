@@ -1,13 +1,17 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import QuestionSerializer, UpdatedQuestionSerializer, QuestionTextSerializer
+from .serializer import (
+    QuestionSerializer,
+    UpdatedQuestionSerializer,
+    QuestionTextSerializer,
+)
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostQuestionRequestSerializer,
     PostQuestionResponseSerializer,
     GetQuestionResponseSerializer,
-    GetQuestionRequestSerializer
+    GetQuestionRequestSerializer,
 )
 from question.models import Poll, Question
 from accounts.models import User
@@ -25,17 +29,18 @@ def create_poll(user_id):
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
-        responses={200: GetQuestionResponseSerializer},)
+        responses={200: GetQuestionResponseSerializer},
+    )
     def get(self, request):
         poll_id = request.GET.get("poll_id")
         poll = Poll.objects.get(id=poll_id)
         questions = Question.objects.filter(poll_id=poll)
-        
+
         questions_serializer = QuestionTextSerializer(questions, many=True)
         response_data = [item["question_text"] for item in questions_serializer.data]
         response = {"questions": response_data}
         return Response(response, status=status.HTTP_200_OK)
-    
+
     @swagger_auto_schema(
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
@@ -55,9 +60,11 @@ class Questions(APIView):
             questions = questions_serializer.validated_data["questions"]
             # 데이터베이스에 저장할 질문 데이터 생성
             for index in range(len(questions)):
-                question = {"poll_id": poll_id,
-                            "question_number": index + 1,
-                            "question_text": questions[index]}
+                question = {
+                    "poll_id": poll_id,
+                    "question_number": index + 1,
+                    "question_text": questions[index],
+                }
                 updated_questions.append(question)
         else:
             return Response(
@@ -66,7 +73,9 @@ class Questions(APIView):
             )
 
         # 데이터(질문) 저장
-        updated_serializer = UpdatedQuestionSerializer(data=updated_questions, many=True)
+        updated_serializer = UpdatedQuestionSerializer(
+            data=updated_questions, many=True
+        )
         if updated_serializer.is_valid():
             updated_serializer.save()
         else:
