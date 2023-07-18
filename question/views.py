@@ -9,7 +9,6 @@ from .swagger_serializer import (
     GetQuestionResponseSerializer,
     GetQuestionRequestSerializer
 )
-from rest_framework.decorators import api_view
 from question.models import Poll, Question
 from accounts.models import User
 
