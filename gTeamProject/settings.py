@@ -27,7 +27,7 @@ AUTHENTICATION_BACKENDS = [
 SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
 SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
-
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 
 # Application definition
 

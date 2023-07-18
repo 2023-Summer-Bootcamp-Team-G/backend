@@ -23,6 +23,7 @@ from character.views import nlpAPI
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from question.views import get_user_data
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -41,6 +42,7 @@ urlpatterns = [
     path("api/register/", RegisterView.as_view(), name="register"),
     path("api/login/", LoginView.as_view(), name="login"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+    path("api/user-data/", get_user_data),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

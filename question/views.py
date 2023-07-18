@@ -1,6 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import JsonResponse
+
 from .serializer import (
     QuestionSerializer,
     UpdatedQuestionSerializer,
@@ -15,6 +17,8 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
+from django.http import JsonResponse
+from django.contrib.auth import authenticate
 
 
 def create_poll(user_id):
@@ -24,6 +28,27 @@ def create_poll(user_id):
         return poll.id
     except User.DoesNotExist:
         return None
+
+
+def get_user_data(request):
+    session_id = request.session.session_key
+    user_id = request.session.get("user_id")
+    nick_name = request.session.get("nick_name")
+
+    if user_id and nick_name:
+        user_data = {
+            "session_id": session_id,
+            "user_id": user_id,
+            "nick_name": nick_name,
+        }
+    else:
+        user_data = {
+            "session_id": session_id,
+            "user_id": None,
+            "nick_name": None,
+        }
+
+    return JsonResponse(user_data)
 
 
 class Questions(APIView):

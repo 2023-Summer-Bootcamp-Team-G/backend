@@ -79,13 +79,12 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # 세션 생성 및 저장
-        session = SessionStore()
-        session["user_id"] = user.user_id
-        session.save()
+        # 사용자 정보를 세션에 저장
+        request.session["user_id"] = user.user_id
+        request.session["nick_name"] = user.nick_name
 
         # 세션 ID를 클라이언트에게 전송
         response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        response.set_cookie("sessionid", session.session_key, httponly=True, secure=True, samesite="Lax")
+        response.set_cookie("sessionid", request.session.session_key, httponly=True, secure=True, samesite="Lax")
 
         return response
