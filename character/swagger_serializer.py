@@ -34,15 +34,15 @@ class GetCharacterDetailResponseSerializer(serializers.Serializer):
     answers = AnswerInfoSerializer(many=True)
 
 
-class AnswerInfoSerializer2(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    answer_text = serializers.CharField()
+# class AnswerInfoSerializer2(serializers.Serializer):
+#     question_id = serializers.IntegerField()
+#     answer_text = serializers.CharField()
 
 
 class PostCharacterRequestSerializer(serializers.Serializer):
     poll_id = serializers.IntegerField()
     creatorName = serializers.CharField()
-    answers = AnswerInfoSerializer2(many=True)
+    answers = serializers.ListField(child=serializers.CharField())
 
 
 class PostCharacterResponseSerializer(serializers.Serializer):
