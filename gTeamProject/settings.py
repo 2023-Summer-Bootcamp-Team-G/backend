@@ -21,6 +21,13 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
+# settings.py
+
+# 세션 관리를 위한 쿠키 설정
+SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
+SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
+SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
+
 
 # Application definition
 

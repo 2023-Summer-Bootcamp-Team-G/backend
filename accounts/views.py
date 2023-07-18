@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
+from django.contrib.sessions.backends.db import SessionStore
 
 # authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
 # 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
@@ -78,6 +79,13 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        login(request, user)
+        # 세션 생성 및 저장
+        session = SessionStore()
+        session["user_id"] = user.user_id
+        session.save()
 
-        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        # 세션 ID를 클라이언트에게 전송
+        response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        response.set_cookie("sessionid", session.session_key, httponly=True, secure=True, samesite="Lax")
+
+        return response
