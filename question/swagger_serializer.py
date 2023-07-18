@@ -16,4 +16,13 @@ class QuestionIdTextSerializer(serializers.Serializer):
 
 
 class PostQuestionResponseSerializer(serializers.Serializer):
+    poll_id = serializers.IntegerField()
+    questions = QuestionIdTextSerializer(many=True)
+
+
+class GetQuestionRequestSerializer(serializers.Serializer):
+    poll_id = serializers.IntegerField()
+
+
+class GetQuestionResponseSerializer(serializers.Serializer):
     questions = QuestionIdTextSerializer(many=True)
