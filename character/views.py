@@ -2,13 +2,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
+from konlpy.tag import Komoran
+import random
 
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
-
-import os
-from dotenv import load_dotenv
-from django.conf import settings
 
 from .models import Submit, Answer
 from question.models import Question, Poll
@@ -31,21 +29,34 @@ from .swagger_serializer import (
     GetKeywordChartResponseSerializer,
 )
 
-import random
-
 fixed_question_num = 2
-
-# # .env.dev 파일 로드
-# load_dotenv(dotenv_path)
 
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
 
-def extract_key_phrases(text):
-    text_encoded = text.encode("utf-8").decode("unicode_escape")
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
+# KoNLPy의 Komoran 형태소 분석기 초기화
+komoran = Komoran()
+
+
+def remove_stopwords(text):
+    komoran = Komoran()
+    words = komoran.morphs(text)
+    stopwords = ['요', '것', '외모', '지']  # 불용어 리스트
+    filtered_words = [word for word in words if word not in stopwords]
+    filtered_text = ' '.join(filtered_words)
+    return filtered_text
+
+
+def extract_key_phrases(text_list, min_score=0.9):
+    key_phrases = []
+    for text in text_list:
+        processed_text = remove_stopwords(text)
+        response = comprehend.detect_key_phrases(Text=processed_text, LanguageCode="ko")
+        phrases = [phrase["Text"] for phrase in response["KeyPhrases"] if phrase["Score"] >= min_score]
+        phrases = [phrase.replace("3", "3D") for phrase in phrases]  # 대체된 문자열을 다시 "3D"로 복원
+        phrases = [phrase.replace("브리", "지브리") for phrase in phrases]  # 대체된 문자열을 다시 "3D"로 복원
+        key_phrases.extend(phrases)
     return key_phrases
 
 
@@ -53,12 +64,12 @@ class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
 
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
 
 
 def extract_keyword(answer):
