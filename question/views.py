@@ -32,7 +32,8 @@ class Questions(APIView):
         questions = Question.objects.filter(poll_id=poll)
         
         questions_serializer = QuestionSerializer3(questions, many=True)
-        response = {"questions": questions_serializer.data}
+        response_data = [item["question_text"] for item in questions_serializer.data]
+        response = {"questions": response_data}
         return Response(response, status=status.HTTP_200_OK)
     
     @swagger_auto_schema(

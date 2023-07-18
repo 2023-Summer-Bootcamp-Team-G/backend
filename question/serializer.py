@@ -21,4 +21,4 @@ class UpdatedQuestionSerializer(serializers.ModelSerializer):
 class QuestionSerializer3(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ["question_number", "question_text"]
+        fields = ["question_text"]
