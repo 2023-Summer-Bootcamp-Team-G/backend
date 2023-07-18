@@ -18,7 +18,13 @@ class UpdatedQuestionSerializer(serializers.ModelSerializer):
         fields = ["poll_id", "question_number", "question_text"]
 
 
-class QuestionSerializer3(serializers.ModelSerializer):
+class QuestionTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ["question_text"]
+        
+        
+class QuestionIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ["id"]

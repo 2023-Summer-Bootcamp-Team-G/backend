@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import QuestionSerializer, UpdatedQuestionSerializer, PollSerializer, QuestionSerializer3
+from .serializer import QuestionSerializer, UpdatedQuestionSerializer, QuestionTextSerializer
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostQuestionRequestSerializer,
@@ -31,7 +31,7 @@ class Questions(APIView):
         poll = Poll.objects.get(id=poll_id)
         questions = Question.objects.filter(poll_id=poll)
         
-        questions_serializer = QuestionSerializer3(questions, many=True)
+        questions_serializer = QuestionTextSerializer(questions, many=True)
         response_data = [item["question_text"] for item in questions_serializer.data]
         response = {"questions": response_data}
         return Response(response, status=status.HTTP_200_OK)
