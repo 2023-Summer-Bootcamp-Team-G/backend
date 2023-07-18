@@ -1,17 +1,19 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer, QuestionSerializer3
+from .serializer import (
+    QuestionSerializer,
+    UpdatedQuestionSerializer,
+    QuestionTextSerializer,
+)
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
     PostQuestionRequestSerializer,
     PostQuestionResponseSerializer,
     GetQuestionResponseSerializer,
-    GetQuestionRequestSerializer
+    GetQuestionRequestSerializer,
 )
-from rest_framework.decorators import api_view
 from question.models import Poll, Question
-from .serializer import QuestionSerializer1, QuestionSerializer2, PollSerializer
 from accounts.models import User
 
 
@@ -27,16 +29,18 @@ def create_poll(user_id):
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
-        responses={200: GetQuestionResponseSerializer},)
+        responses={200: GetQuestionResponseSerializer},
+    )
     def get(self, request):
         poll_id = request.GET.get("poll_id")
         poll = Poll.objects.get(id=poll_id)
         questions = Question.objects.filter(poll_id=poll)
-        
-        questions_serializer = QuestionSerializer3(questions, many=True)
-        response = {"questions": questions_serializer.data}
+
+        questions_serializer = QuestionTextSerializer(questions, many=True)
+        response_data = [item["question_text"] for item in questions_serializer.data]
+        response = {"questions": response_data}
         return Response(response, status=status.HTTP_200_OK)
-    
+
     @swagger_auto_schema(
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
@@ -51,15 +55,16 @@ class Questions(APIView):
         updated_questions = []
 
         # 질문 내용 체크 및 직렬화
-        questions_serializer = QuestionSerializer1(
-            data=request.data["questions"], many=True
-        )
+        questions_serializer = QuestionSerializer(data=request.data)
         if questions_serializer.is_valid():
-            questions = questions_serializer.validated_data
+            questions = questions_serializer.validated_data["questions"]
             # 데이터베이스에 저장할 질문 데이터 생성
-            for index, question in enumerate(questions):
-                question["poll_id"] = poll_id
-                question["question_number"] = index + 1
+            for index in range(len(questions)):
+                question = {
+                    "poll_id": poll_id,
+                    "question_number": index + 1,
+                    "question_text": questions[index],
+                }
                 updated_questions.append(question)
         else:
             return Response(
@@ -67,21 +72,15 @@ class Questions(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 데이터(질문) 저장 및 응답 정보 생성
-        updated_serializer = QuestionSerializer2(data=updated_questions, many=True)
-        response_data = []
+        # 데이터(질문) 저장
+        updated_serializer = UpdatedQuestionSerializer(
+            data=updated_questions, many=True
+        )
         if updated_serializer.is_valid():
-            updated_questions = updated_serializer.save()
-            for question in updated_questions:
-                response_data.append(
-                    {
-                        "question_id": question.question_number,
-                        "question_text": question.question_text,
-                    }
-                )
+            updated_serializer.save()
         else:
             return Response(
                 {"error": updated_serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
-        response = {"poll_id": poll_id, "questions": response_data}
+        response = {"poll_id": poll_id}
         return Response(response, status=status.HTTP_201_CREATED)

@@ -8,19 +8,23 @@ class PollSerializer(serializers.ModelSerializer):
         fields = ["user_id"]
 
 
-class QuestionSerializer1(serializers.ModelSerializer):  # 질문 내용만 체크
-    class Meta:
-        model = Question
-        fields = ["question_text"]
+class QuestionSerializer(serializers.Serializer):  # 질문 내용만 체크
+    questions = serializers.ListField(child=serializers.CharField())
 
 
-class QuestionSerializer2(serializers.ModelSerializer):
+class UpdatedQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ["poll_id", "question_number", "question_text"]
 
 
-class QuestionSerializer3(serializers.ModelSerializer):
+class QuestionTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ["question_number", "question_text"]
+        fields = ["question_text"]
+
+
+class QuestionIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ["id"]

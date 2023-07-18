@@ -19,7 +19,7 @@ from .serializer import (
     AnswerSerializer,
     AnswerPostSerializer,
 )
-from question.serializer import QuestionSerializer3
+from question.serializer import QuestionTextSerializer, QuestionIdSerializer
 
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
@@ -141,9 +141,9 @@ class Characters(APIView):
         prompt = []
 
         # 답변 추출
-        for i, answer in enumerate(answers, start=1):
-            if i <= fixed_question_num:
-                keyword = extract_keyword(answer)
+        for i in range(len(answers)):
+            if i < fixed_question_num:
+                keyword = extract_keyword(answers[i])
                 # 추출된 키워드 배열
                 prompt.append(keyword)
             else:
@@ -153,18 +153,22 @@ class Characters(APIView):
         submit_data = create_submit(poll_id, nick_name, prompt)
         submit_id = submit_data["character_id"]
 
-        # 답변 저장
-        for i, answer in enumerate(answers, start=1):
-            if i <= fixed_question_num:
-                keyword = prompt[i - 1]
-            else:
-                keyword = answer["answer_text"]
+        # 질문 고유 번호 불러오기
+        question = Question.objects.filter(poll_id=poll_id)
+        question_id_serializer = QuestionIdSerializer(question, many=True)
 
-            question_id = answer["question_id"]
+        # 답변 저장
+        for i in range(len(answers)):
+            if i < fixed_question_num:
+                keyword = prompt[i]
+            else:
+                keyword = answers[i]
+
+            question_id = question_id_serializer.data[i]["id"]
             data = {
                 "question_id": question_id,
                 "submit_id": submit_id,
-                "num": i,
+                "num": i + 1,
                 "content": keyword,
             }
             answer_serializer = AnswerPostSerializer(data=data)
@@ -191,7 +195,7 @@ class CharacterDetail(APIView):
 
         # 캐릭터 질문 정보 가져오기
         question = Question.objects.filter(poll_id=submit.poll_id)
-        question_data = QuestionSerializer3(question, many=True)
+        question_data = QuestionTextSerializer(question, many=True)
 
         response_data = dict(submit_data.data)
         response_data["questions"] = question_data.data
