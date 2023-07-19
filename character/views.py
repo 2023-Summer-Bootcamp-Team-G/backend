@@ -12,6 +12,7 @@ from django.conf import settings
 
 from .models import Submit, Answer
 from question.models import Question, Poll
+from accounts.models import User
 from .serializer import (
     SubmitSerializer,
     SubmitDetailSerializer,
@@ -91,7 +92,7 @@ def extract_keyword(answer):
 
 
 def create_image(prompt):
-    url = "https://exapmle.com/"
+    url = "https://exapmle.com/123"
     return url
 
 
@@ -106,18 +107,19 @@ def create_submit(poll_id, nick_name, prompt, login):
         "poll_id": poll_id,
         "result_url": result_url,
         "nick_name": nick_name,
+        "character_id": 0,
     }
-    
     update_submit = None
     #캐릭터 정보 업데이트
     if login:
+        submit_data["nick_name"] = None
         update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
-        if update_submit: # 캐릭터 다시 생성 시
+        if update_submit:  # 캐릭터 다시 생성 시
             update_submit.result_url = result_url
             update_submit.save()
             submit_data["character_id"] = update_submit.id
 
-    if update_submit is None: # 캐릭터 최초 생성 시
+    if update_submit is None:  # 캐릭터 최초 생성 시
         # 캐릭터 정보 저장
         submit_serializer = SubmitCreateSerializer(data=submit_data)
         if submit_serializer.is_valid():
@@ -130,7 +132,7 @@ def create_submit(poll_id, nick_name, prompt, login):
     # response data 수정
     submit_data.pop("user_id")
     submit_data.pop("poll_id")
-    submit_data["keyowrd"] = prompt
+    submit_data["keyword"] = prompt
 
     return submit_data
 
@@ -146,9 +148,14 @@ class Characters(APIView):
         submit = Submit.objects.filter(user_id=user_id)
         submit_serializer = SubmitSerializer(submit, many=True)
 
+        # user nick_name 가져오기
+        user = User.objects.get(user_id=user_id)
+        nick_name = user.nick_name
+        
         for data in submit_serializer.data:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] == None:
+                data["nick_name"] = nick_name
                 answer_data = Answer.objects.filter(submit_id=data["id"])
                 answer_serializer = AnswerSerializer(answer_data, many=True)
 
@@ -157,6 +164,8 @@ class Characters(APIView):
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
                         keyword.append(answer["content"])
+                    else:
+                        break
                 # response data에 키워드 추가
                 data["keyword"] = keyword
 
@@ -172,6 +181,7 @@ class Characters(APIView):
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
+        # return Response({"poll_id":poll_id, "nick_name": nick_name, "answer": answers, "login": login}, status=status.HTTP_200_OK)
 
         prompt = []
 
@@ -183,9 +193,11 @@ class Characters(APIView):
                 prompt.append(keyword)
             else:
                 break
-
+        # return Response({"prompt":prompt}, status=status.HTTP_200_OK)
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt, login)
+        # if submit_data:
+            # return Response({"submit":submit_data["nick_name"]}, status=status.HTTP_200_OK)
         submit_id = submit_data["character_id"]
 
         # 질문 고유 번호 불러오기
