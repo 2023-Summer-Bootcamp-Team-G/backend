@@ -18,7 +18,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include, re_path
-from accounts.views import RegisterView, LoginView
+from accounts.views import RegisterView, LoginView, LogoutView
 from character.views import nlpAPI
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -41,7 +41,8 @@ urlpatterns = [
     path("api/characters/", include("character.urls")),
     path("api/register/", RegisterView.as_view(), name="register"),
     path("api/login/", LoginView.as_view(), name="login"),
-    path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+    path("api/logout/", LogoutView.as_view(), name="logout"),
+    path("api/extract-phrases/", nlpAPI.as_view(), name="extract-phrases"),
     path("api/user-data/", get_user_data),
 ]
 

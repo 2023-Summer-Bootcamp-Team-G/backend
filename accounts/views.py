@@ -4,6 +4,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
 from django.contrib.sessions.backends.db import SessionStore
+from django.views.decorators.csrf import csrf_protect
 
 # authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
 # 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
@@ -88,3 +89,14 @@ class LoginView(APIView):
         response.set_cookie("sessionid", request.session.session_key, httponly=True, secure=True, samesite="Lax")
 
         return response
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        # 세션 삭제
+        request.session.flush()
+        # 사용자 정보 초기화
+        request.session["user_id"] = None
+        request.session["nick_name"] = None
+
+        return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)

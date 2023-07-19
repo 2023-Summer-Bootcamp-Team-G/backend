@@ -35,18 +35,18 @@ def get_user_data(request):
     user_id = request.session.get("user_id")
     nick_name = request.session.get("nick_name")
 
-    if user_id and nick_name:
-        user_data = {
-            "session_id": session_id,
-            "user_id": user_id,
-            "nick_name": nick_name,
-        }
-    else:
-        user_data = {
-            "session_id": session_id,
-            "user_id": None,
-            "nick_name": None,
-        }
+    # 로그아웃 상태 확인
+    if "logout" in request.GET:
+        # 세션 데이터 삭제
+        request.session.flush()
+        user_id = None
+        nick_name = None
+
+    user_data = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "nick_name": nick_name,
+    }
 
     return JsonResponse(user_data)
 
