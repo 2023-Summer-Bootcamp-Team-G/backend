@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
-
+from django.core.exceptions import ObjectDoesNotExist
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
 
@@ -257,8 +257,11 @@ class Characters(APIView):
 class CharacterDetail(APIView):
     @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
     def get(self, request, character_id):
+        try:
         # 캐릭터 상세 정보 가져오기
-        submit = Submit.objects.get(id=character_id)
+            submit = Submit.objects.get(id=character_id)
+        except ObjectDoesNotExist:
+            return Response({"error": "submit does not exist"}, status=status.HTTP_404_NOT_FOUND)   
         submit_data = SubmitDetailSerializer(submit)
 
         # 캐릭터 답변 정보 가져오기
