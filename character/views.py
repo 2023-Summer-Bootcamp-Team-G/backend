@@ -61,6 +61,29 @@ class nlpAPI(APIView):
         return JsonResponse({"key_phrases": key_phrases})
 
 
+def get_user_data(request):
+    session_id = request.session.session_key
+    user_id = request.session.get("user_id")
+    nick_name = request.session.get("nick_name")
+
+    if user_id and nick_name:
+        return True
+        # user_data = {
+        #     "session_id": session_id,
+        #     "user_id": user_id,
+        #     "nick_name": nick_name,
+        # }
+    else:
+        return False
+        # user_data = {
+        #     "session_id": session_id,
+        #     "user_id": None,
+        #     "nick_name": None,
+        # }
+
+    # return JsonResponse(user_data)
+
+
 def extract_keyword(answer):
     keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
     num = random.randint(0, 4)
@@ -72,7 +95,7 @@ def create_image(prompt):
     return url
 
 
-def create_submit(poll_id, nick_name, prompt):
+def create_submit(poll_id, nick_name, prompt, login):
     result_url = create_image(prompt)
 
     poll = Poll.objects.get(id=poll_id)
@@ -84,14 +107,25 @@ def create_submit(poll_id, nick_name, prompt):
         "result_url": result_url,
         "nick_name": nick_name,
     }
+    
+    update_submit = None
+    #캐릭터 정보 업데이트
+    if login:
+        update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
+        if update_submit: # 캐릭터 다시 생성 시
+            update_submit.result_url = result_url
+            update_submit.save()
+            submit_data["character_id"] = update_submit.id
 
-    submit_serializer = SubmitCreateSerializer(data=submit_data)
-    if submit_serializer.is_valid():
-        submit_instance = submit_serializer.save()
-    else:
-        return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if update_submit is None: # 캐릭터 최초 생성 시
+        # 캐릭터 정보 저장
+        submit_serializer = SubmitCreateSerializer(data=submit_data)
+        if submit_serializer.is_valid():
+            submit_instance = submit_serializer.save()
+        else:
+            return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    submit_data["character_id"] = submit_instance.id
+        submit_data["character_id"] = submit_instance.id
 
     # response data 수정
     submit_data.pop("user_id")
@@ -134,6 +168,7 @@ class Characters(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
+        login = get_user_data(request)
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
@@ -150,7 +185,7 @@ class Characters(APIView):
                 break
 
         # 캐릭터 생성
-        submit_data = create_submit(poll_id, nick_name, prompt)
+        submit_data = create_submit(poll_id, nick_name, prompt, login)
         submit_id = submit_data["character_id"]
 
         # 질문 고유 번호 불러오기
