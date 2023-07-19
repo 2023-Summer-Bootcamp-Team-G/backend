@@ -92,7 +92,7 @@ def extract_keyword(answer):
 
 
 def create_image(prompt):
-    url = "https://exapmle.com/123"
+    url = "https://exapmle.com/123565645"
     return url
 
 
@@ -112,14 +112,17 @@ def create_submit(poll_id, nick_name, prompt, login):
     update_submit = None
     #캐릭터 정보 업데이트
     if login:
+        if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
+            update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").last()
+        else: # 캐릭터 다시 만들 경우
+            update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
         submit_data["nick_name"] = None
-        update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
         if update_submit:  # 캐릭터 다시 생성 시
             update_submit.result_url = result_url
             update_submit.save()
             submit_data["character_id"] = update_submit.id
 
-    if update_submit is None:  # 캐릭터 최초 생성 시
+    if update_submit is None:  # 캐릭터 최초 생성 시, 답변자가 생성할 때
         # 캐릭터 정보 저장
         submit_serializer = SubmitCreateSerializer(data=submit_data)
         if submit_serializer.is_valid():
@@ -181,7 +184,6 @@ class Characters(APIView):
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
-        # return Response({"poll_id":poll_id, "nick_name": nick_name, "answer": answers, "login": login}, status=status.HTTP_200_OK)
 
         prompt = []
 
@@ -193,11 +195,8 @@ class Characters(APIView):
                 prompt.append(keyword)
             else:
                 break
-        # return Response({"prompt":prompt}, status=status.HTTP_200_OK)
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt, login)
-        # if submit_data:
-            # return Response({"submit":submit_data["nick_name"]}, status=status.HTTP_200_OK)
         submit_id = submit_data["character_id"]
 
         # 질문 고유 번호 불러오기
@@ -275,6 +274,8 @@ class DuplicateCharacter(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
+        login = get_user_data(request)
+        
         user_id = request.data.get("user_id")
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
@@ -286,7 +287,7 @@ class DuplicateCharacter(APIView):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
             prompt.append(max_value_keyword)
 
-        submit_data = create_submit(poll_id, None, prompt)
+        submit_data = create_submit(poll_id, None, prompt, login)
 
         return Response(submit_data, status=status.HTTP_201_CREATED)
 
