@@ -84,6 +84,12 @@ class LoginView(APIView):
 
         # 세션 ID를 클라이언트에게 전송
         response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        response.set_cookie("sessionid", request.session.session_key, httponly=True, secure=True, samesite="Lax")
+        response.set_cookie(
+            "sessionid",
+            request.session.session_key,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+        )
 
         return response

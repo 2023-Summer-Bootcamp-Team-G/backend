@@ -110,14 +110,25 @@ def create_submit(poll_id, nick_name, prompt, login):
         "character_id": 0,
     }
     update_submit = None
-    #캐릭터 정보 업데이트
+    # 캐릭터 정보 업데이트
+    # (질문 생성자가 생성할 수 있는 캐릭터는 총 2개)
+    # 1. 본인이 답변한 키워드로 생성된 캐릭터
+    # 2. 중복 키워드로 생성된 캐릭터
+    # 그래서 first, last로 구분 가능하다.
     if login:
         if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
-            submit_list = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at")
+            submit_list = Submit.objects.filter(
+                user_id=user_id, poll_id=poll_id, nick_name=None
+            ).order_by("created_at")
+
             if submit_list.count() > 1:
                 update_submit = submit_list.last()
-        else: # 캐릭터 다시 만들 경우
-            update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
+        else:  # 캐릭터 다시 만들 경우
+            update_submit = (
+                Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None)
+                .order_by("created_at")
+                .first() # 질문 생성자가 가장 먼저 본인이 캐릭터를 만들기 때문
+            )
         submit_data["nick_name"] = None
         if update_submit:  # 캐릭터 다시 생성 시
             update_submit.result_url = result_url
@@ -130,7 +141,9 @@ def create_submit(poll_id, nick_name, prompt, login):
         if submit_serializer.is_valid():
             submit_instance = submit_serializer.save()
         else:
-            return Response(submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
         submit_data["character_id"] = submit_instance.id
 
@@ -156,9 +169,9 @@ class Characters(APIView):
         # user nick_name 가져오기
         user = User.objects.get(user_id=user_id)
         nick_name = user.nick_name
-        
+
         user_characters = []
-        
+
         for data in submit_serializer.data:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] == None:
@@ -176,11 +189,13 @@ class Characters(APIView):
                 # response data에 키워드 추가
                 data["keyword"] = keyword
                 user_characters.append(data)
-        
-        # for character in user_characters:
-        #     submit_serializer.data.remove(character)
-        filtered_data = [character for character in submit_serializer.data if character not in user_characters]
-        
+
+        filtered_data = [
+            character
+            for character in submit_serializer.data
+            if character not in user_characters
+        ]
+
         user_characters.extend(filtered_data)
 
         response_data = {"characters": user_characters}
@@ -286,22 +301,48 @@ class DuplicateCharacter(APIView):
     )
     def post(self, request):
         login = get_user_data(request)
-        
+
         user_id = request.data.get("user_id")
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
-        
+
         if keyword_count[1] == {}:
-            return Response({"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
             prompt.append(max_value_keyword)
 
         submit_data = create_submit(poll_id, None, prompt, login)
+        submit_id = submit_data["character_id"]
+
+        # 질문 고유 번호 불러오기
+        question = Question.objects.filter(poll_id=poll_id)
+        question_id_serializer = QuestionIdSerializer(question, many=True)
+
+        # 중복 캐릭터에 대한 답변 저장
+        for i in range(len(prompt)):
+            keyword = prompt[i]
+
+            question_id = question_id_serializer.data[i]["id"]
+            data = {
+                "question_id": question_id,
+                "submit_id": submit_id,
+                "num": i + 1,
+                "content": keyword,
+            }
+            answer_serializer = AnswerPostSerializer(data=data)
+            if answer_serializer.is_valid():
+                answer_serializer.save()
+            else:
+                return Response(
+                    answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
 
         return Response(submit_data, status=status.HTTP_201_CREATED)
 
@@ -317,9 +358,11 @@ class KeywordChart(APIView):
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
-        
+
         if keyword_count[1] == {}:
-            return Response({"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         for i in range(fixed_question_num + 1):
             sorted_keyword_count = dict(
