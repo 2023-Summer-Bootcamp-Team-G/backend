@@ -113,7 +113,9 @@ def create_submit(poll_id, nick_name, prompt, login):
     #캐릭터 정보 업데이트
     if login:
         if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
-            update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").last()
+            submit_list = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at")
+            if submit_list.count() > 1:
+                update_submit = submit_list.last()
         else: # 캐릭터 다시 만들 경우
             update_submit = Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None).order_by("created_at").first()
         submit_data["nick_name"] = None
@@ -155,6 +157,8 @@ class Characters(APIView):
         user = User.objects.get(user_id=user_id)
         nick_name = user.nick_name
         
+        user_characters = []
+        
         for data in submit_serializer.data:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] == None:
@@ -171,8 +175,15 @@ class Characters(APIView):
                         break
                 # response data에 키워드 추가
                 data["keyword"] = keyword
+                user_characters.append(data)
+        
+        # for character in user_characters:
+        #     submit_serializer.data.remove(character)
+        filtered_data = [character for character in submit_serializer.data if character not in user_characters]
+        
+        user_characters.extend(filtered_data)
 
-        response_data = {"characters": submit_serializer.data}
+        response_data = {"characters": user_characters}
         return Response(response_data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -281,8 +292,10 @@ class DuplicateCharacter(APIView):
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
+        
         if keyword_count[1] == {}:
             return Response({"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST)
+        
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
