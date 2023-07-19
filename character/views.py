@@ -281,7 +281,8 @@ class DuplicateCharacter(APIView):
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
-
+        if keyword_count[1] == {}:
+            return Response({"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST)
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
@@ -303,6 +304,9 @@ class KeywordChart(APIView):
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
         keyword_count = count_keyword(poll_id)
+        
+        if keyword_count[1] == {}:
+            return Response({"message": "아직 답변이 모이지 않았어요!"}, status=status.HTTP_400_BAD_REQUEST)
 
         for i in range(fixed_question_num + 1):
             sorted_keyword_count = dict(
