@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
 import random
+from subprocess import run
 
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
@@ -44,12 +45,26 @@ class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
+        return Response({"key_phrases": key_phrases})
 
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases}, json_dumps_params={"ensure_ascii": False})
+
+        # Bing Image Creator 실행
+        bing_image_creator_command = [
+            "python", "-m", "BingImageCreator",
+            # 브라우저 Bing 인증 쿠키
+            "-U", "1t5uTJq8D1m73fYAecKUaQL765yosGjzsdUqHf_woOaQNzG1kVg59chwqn-b9eQPagipSckxnSv1MQz5OOxswkXL7L1lunWhbpke7j5XA8WY5VP0fDavlF8XoeRCwhdT9T6-xrw84A9B_fbKUaHpItkhzdusD--ozQPt4tTR8VimNBfxBM_d8gN-OTpgYuXQY7URx4PYCK5m-07NIUiCQ5u_0ZirLQ39v3XRLKpMt24I",
+            # 이미지 생성을 위한 키워드
+            "--prompt", " ".join(key_phrases),
+            # 이미지 저장 위치
+            "--output-dir", "images"
+        ]
+
+        run(bing_image_creator_command)
+
+        return Response({"key_phrases": key_phrases})
 
 
 def extract_keyword(answer):
