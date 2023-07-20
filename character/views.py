@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
 import random
+import base64
+import json
 from subprocess import run
 
 # from gTeamProject.settings import extract_key_phrases
@@ -51,11 +53,13 @@ class nlpAPI(APIView):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
 
+        bingCookie = get_ImageCreator()
+        
         # Bing Image Creator 실행
         bing_image_creator_command = [
             "python", "-m", "BingImageCreator",
             # 브라우저 Bing 인증 쿠키
-            "-U", "1t5uTJq8D1m73fYAecKUaQL765yosGjzsdUqHf_woOaQNzG1kVg59chwqn-b9eQPagipSckxnSv1MQz5OOxswkXL7L1lunWhbpke7j5XA8WY5VP0fDavlF8XoeRCwhdT9T6-xrw84A9B_fbKUaHpItkhzdusD--ozQPt4tTR8VimNBfxBM_d8gN-OTpgYuXQY7URx4PYCK5m-07NIUiCQ5u_0ZirLQ39v3XRLKpMt24I",
+            "-U", bingCookie,
             # 이미지 생성을 위한 키워드
             "--prompt", " ".join(key_phrases),
             # 이미지 저장 위치
@@ -277,3 +281,22 @@ class KeywordChart(APIView):
 
         Response_data = {"keyword_count": keyword_count}
         return Response(Response_data, status=status.HTTP_200_OK)
+
+
+def get_ImageCreator():
+    secret_name = "BingImageCreator"
+    region_name = "ap-northeast-2"
+    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except Exception as e:
+        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
+
+    if 'SecretString' in response:
+        secret_string = response['SecretString']
+        secret = json.loads(secret_string)
+        bingCookie = secret['cookie']
+        return bingCookie
+    else:
+        raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
