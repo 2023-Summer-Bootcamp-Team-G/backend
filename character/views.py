@@ -1,11 +1,12 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.http import JsonResponse
-import random
-import base64
 import json
+import random
+import os
+import boto3
 from subprocess import run
+from gTeamProject.settings import get_s3Key
 
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
@@ -33,6 +34,7 @@ from .swagger_serializer import (
 
 fixed_question_num = 2
 
+
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
@@ -43,6 +45,43 @@ def extract_key_phrases(text, min_score=0.9):
     return key_phrases
 
 
+# Bing Image Creator 실행 함수
+def run_bing_image_creator(bing_cookie, key_phrases):
+    bing_image_creator_command = [
+        "python", "-m", "BingImageCreator",
+        "-U", bing_cookie,
+        "--prompt", " ".join(key_phrases),
+        "--output-dir", "images"
+    ]
+
+    run(bing_image_creator_command)
+
+
+def upload_images_to_s3():
+    region_name = "ap-northeast-2"
+    s3_client = AWSManager._session.client(service_name='s3', region_name=region_name)
+
+    # 이미지 저장할 S3 버킷 및 폴더 설정 (변경 필요)
+    s3_bucket = "team-g-s3"
+    s3_folder = "images"
+
+    # 이미지 파일명 지정 (필요 시 수정)
+    image_filenames = ["2.jpeg"]
+
+    # 현재 디렉토리의 'images' 폴더 안에 이미지 파일이 있는 경우
+    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+
+    for index, filename in enumerate(image_filenames):
+        # 이미지 파일의 절대 경로 생성
+        image_file_path = os.path.join(image_path, filename)
+
+        # 이미지 파일 데이터를 읽어와서 S3에 업로드
+        with open(image_file_path, "rb") as file:
+            key = f"{s3_folder}/{filename}"
+            s3_client.put_object(Bucket=s3_bucket, Key=key, Body=file)
+
+
+# APIView 클래스 정의
 class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
@@ -53,20 +92,12 @@ class nlpAPI(APIView):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
 
-        bingCookie = get_ImageCreator()
-        
         # Bing Image Creator 실행
-        bing_image_creator_command = [
-            "python", "-m", "BingImageCreator",
-            # 브라우저 Bing 인증 쿠키
-            "-U", bingCookie,
-            # 이미지 생성을 위한 키워드
-            "--prompt", " ".join(key_phrases),
-            # 이미지 저장 위치
-            "--output-dir", "images"
-        ]
+        bing_cookie = get_ImageCreator()
+        run_bing_image_creator(bing_cookie, key_phrases)
 
-        run(bing_image_creator_command)
+        # 이미지를 S3에 업로드
+        upload_images_to_s3()
 
         return Response({"key_phrases": key_phrases})
 
