@@ -31,6 +31,10 @@ from .swagger_serializer import (
     PostCharacterRequestSerializer,
     PostCharacterResponseSerializer,
     GetKeywordChartResponseSerializer,
+    GetURLsResponseSerializer,
+    GetCharacterInfoResponseSerializer,
+    PostFinalSubmitRequestSerializer,
+    PostFinalSubmitResponseSerializer,
 )
 from .task import create_character
 from celery.result import AsyncResult
@@ -394,6 +398,7 @@ class KeywordChart(APIView):
 
 
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
+    @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
     def get(self, request, task_id):
         task = AsyncResult(task_id)
         if not task.ready():
@@ -407,6 +412,7 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
 
 
 class CharacterInfo(APIView):
+    @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
     def get(self, request, task_id):  # 최종 결과물
         task = AsyncResult(task_id)
         submit_id = task.get()["submit_id"]
@@ -420,6 +426,10 @@ class CharacterInfo(APIView):
 
 
 class FinalSubmit(APIView):
+    @swagger_auto_schema(
+        request_body=PostCharacterRequestSerializer,
+        responses=(201, PostFinalSubmitRequestSerializer),
+    )
     def post(self, request):  # url선택시 submit에 url 저장
         task_id = request.data.get("task_id")
         index = request.data.get("index")
@@ -432,4 +442,4 @@ class FinalSubmit(APIView):
         submit.result_url = result_url
         submit.save()
 
-        return Response({"message": submit_id}, status=status.HTTP_200_OK)
+        return Response({"message": submit_id}, status=status.HTTP_201_CREATED)
