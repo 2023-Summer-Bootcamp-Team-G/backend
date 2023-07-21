@@ -5,7 +5,9 @@ from .views import (
     nlpAPI,
     DuplicateCharacter,
     KeywordChart,
-    Task,
+    URLs,
+    CharacterInfo,
+    FinalSubmit,
 )
 
 urlpatterns = [
@@ -14,5 +16,7 @@ urlpatterns = [
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
     path("chart", KeywordChart.as_view()),
     path("duplicate", DuplicateCharacter.as_view()),
-    path("<str:task_id>", Task.as_view()),
+    path("urls/<str:task_id>", URLs.as_view()),
+    path("choice", FinalSubmit.as_view()),
+    path("info/<str:task_id>", CharacterInfo.as_view()),
 ]

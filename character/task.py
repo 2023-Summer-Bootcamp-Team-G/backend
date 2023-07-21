@@ -5,7 +5,12 @@ from .models import Submit
 
 
 def create_image(prompt):
-    url = "https://exapmle.com/123565645"
+    url = [
+        "https://exapmle.com/0",
+        "https://exapmle.com/1",
+        "https://exapmle.com/2",
+        "https://exapmle.com/3",
+    ]
     return url
 
 
@@ -13,8 +18,9 @@ def create_image(prompt):
 def create_character(submit_id, prompt):
     result_url = create_image(prompt)
     # submit id로 찾아서 업데이트
-    submit = Submit.objects.get(id=submit_id)
-    submit.result_url = result_url
-    submit.save()
+    # submit = Submit.objects.get(id=submit_id)
+    # submit.result_url = result_url
+    # submit.save()
 
-    return {"submit_id": submit_id, "keyword": prompt}
+    # return {"submit_id": submit_id, "keyword": prompt}
+    return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
