@@ -12,7 +12,7 @@ class PostUserResponseSerializer(serializers.Serializer):
 
 
 class PostLoginRequestSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    user_id = serializers.CharField()
     password = serializers.CharField()
 
 
