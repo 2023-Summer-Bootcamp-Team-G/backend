@@ -47,8 +47,8 @@ def get_user_data(request):
         # }
 
     # return JsonResponse(user_data)
-    
-    
+
+
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
@@ -72,7 +72,7 @@ class Questions(APIView):
         login = get_user_data(request)
         if not login:
             return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
-        
+
         user_id = request.data.get("user_id")
         poll_id = create_poll(user_id)  # poll 생성
 

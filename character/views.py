@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
+
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
 
@@ -31,6 +32,8 @@ from .swagger_serializer import (
     PostCharacterResponseSerializer,
     GetKeywordChartResponseSerializer,
 )
+from .task import create_character
+from celery.result import AsyncResult
 
 import random
 
@@ -91,13 +94,8 @@ def extract_keyword(answer):
     return keyword[num]
 
 
-def create_image(prompt):
-    url = "https://exapmle.com/123565645"
-    return url
-
-
 def create_submit(poll_id, nick_name, prompt, login):
-    result_url = create_image(prompt)
+    # result_url = create_image(prompt)
 
     poll = Poll.objects.get(id=poll_id)
     user_id = poll.user_id
@@ -105,7 +103,7 @@ def create_submit(poll_id, nick_name, prompt, login):
     submit_data = {
         "user_id": user_id,
         "poll_id": poll_id,
-        "result_url": result_url,
+        "result_url": None,
         "nick_name": nick_name,
         "character_id": 0,
     }
@@ -116,23 +114,17 @@ def create_submit(poll_id, nick_name, prompt, login):
     # 2. 중복 키워드로 생성된 캐릭터
     # 그래서 first, last로 구분 가능하다.
     if login:
-        if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
-            submit_list = Submit.objects.filter(
-                user_id=user_id, poll_id=poll_id, nick_name=None
-            ).order_by("created_at")
+        submit_list = Submit.objects.filter(
+            user_id=user_id, poll_id=poll_id, nick_name=None
+        ).order_by("created_at")
 
+        if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
             if submit_list.count() > 1:
                 update_submit = submit_list.last()
         else:  # 캐릭터 다시 만들 경우
-            update_submit = (
-                Submit.objects.filter(user_id=user_id, poll_id=poll_id, nick_name=None)
-                .order_by("created_at")
-                .first() # 질문 생성자가 가장 먼저 본인이 캐릭터를 만들기 때문
-            )
+            update_submit = submit_list.first()
         submit_data["nick_name"] = None
         if update_submit:  # 캐릭터 다시 생성 시
-            update_submit.result_url = result_url
-            update_submit.save()
             submit_data["character_id"] = update_submit.id
 
     if update_submit is None:  # 캐릭터 최초 생성 시, 답변자가 생성할 때
@@ -225,9 +217,15 @@ class Characters(APIView):
         submit_data = create_submit(poll_id, nick_name, prompt, login)
         submit_id = submit_data["character_id"]
 
+        # 이미지 생성 시작
+        task = create_character.delay(submit_id, prompt)
+
         # 질문 고유 번호 불러오기
-        question = Question.objects.filter(poll_id=poll_id)
+        question = Question.objects.filter(poll_id=poll_id).order_by("id")
         question_id_serializer = QuestionIdSerializer(question, many=True)
+
+        # 캐릭터 아이디로 답변 검색
+        answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
         # 답변 저장
         for i in range(len(answers)):
@@ -237,31 +235,38 @@ class Characters(APIView):
                 keyword = answers[i]
 
             question_id = question_id_serializer.data[i]["id"]
-            data = {
-                "question_id": question_id,
-                "submit_id": submit_id,
-                "num": i + 1,
-                "content": keyword,
-            }
-            answer_serializer = AnswerPostSerializer(data=data)
-            if answer_serializer.is_valid():
-                answer_serializer.save()
-            else:
-                return Response(
-                    answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                )
 
-        return Response(submit_data, status=status.HTTP_201_CREATED)
+            if answer_list:  # 캐릭터에 대한 답변 업데이트
+                answer_list[i].content = keyword
+                answer_list[i].save()
+            else:  # 캐릭터에 대한 답변 생성
+                data = {
+                    "question_id": question_id,
+                    "submit_id": submit_id,
+                    "num": i + 1,
+                    "content": keyword,
+                }
+                answer_serializer = AnswerPostSerializer(data=data)
+                if answer_serializer.is_valid():
+                    answer_serializer.save()
+                else:
+                    return Response(
+                        answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+        return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
 
 class CharacterDetail(APIView):
     @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
     def get(self, request, character_id):
         try:
-        # 캐릭터 상세 정보 가져오기
+            # 캐릭터 상세 정보 가져오기
             submit = Submit.objects.get(id=character_id)
         except ObjectDoesNotExist:
-            return Response({"error": "submit does not exist"}, status=status.HTTP_404_NOT_FOUND)   
+            return Response(
+                {"error": "submit does not exist"}, status=status.HTTP_404_NOT_FOUND
+            )
         submit_data = SubmitDetailSerializer(submit)
 
         # 캐릭터 답변 정보 가져오기
@@ -304,6 +309,10 @@ class DuplicateCharacter(APIView):
     )
     def post(self, request):
         login = get_user_data(request)
+        if login == False:
+            return Response(
+                {"message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         user_id = request.data.get("user_id")
 
@@ -323,6 +332,8 @@ class DuplicateCharacter(APIView):
 
         submit_data = create_submit(poll_id, None, prompt, login)
         submit_id = submit_data["character_id"]
+
+        task = create_character.delay(submit_id, prompt)
 
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
@@ -347,7 +358,7 @@ class DuplicateCharacter(APIView):
                     answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return Response(submit_data, status=status.HTTP_201_CREATED)
+        return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
 
 class KeywordChart(APIView):
@@ -382,3 +393,22 @@ class KeywordChart(APIView):
 
         Response_data = {"keyword_count": keyword_count}
         return Response(Response_data, status=status.HTTP_200_OK)
+
+
+class Task(APIView):
+    def get(self, request, task_id):
+        task = AsyncResult(task_id)
+        if not task.ready():
+            return Response(
+                {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
+            )  # status code 수정
+
+        #         response_data = task.get()["submit_data"] # DB 에서 조회
+        submit_id = task.get()["submit_id"]
+        keyword = task.get()["keyword"]
+
+        submit = Submit.objects.get(id=submit_id)
+        response_data = SubmitSerializer(submit).data
+        response_data["keyword"] = keyword
+
+        return Response(response_data, status=status.HTTP_200_OK)
