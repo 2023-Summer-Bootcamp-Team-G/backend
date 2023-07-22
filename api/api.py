@@ -7,7 +7,7 @@ from aws import AWSManager
 
 from botocore.exceptions import ClientError
 
-from ratelimit import limits, sleep_and_retry
+# from ratelimit import limits, sleep_and_retry
 
 openai.api_key = AWSManager.get_secret("openai")["api_key"]
 
@@ -22,8 +22,8 @@ bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
 expires_in = int(timedelta(days=1).total_seconds())  # URL의 만료 시간 (초 단위)
 
 
-@sleep_and_retry
-@limits(calls=50, period=60)
+# @sleep_and_retry
+# @limits(calls=50, period=60)
 def create_image(uuid: str, prompt: str) -> str:
     # 동기 작업 수행
     # global __requestTimeList__
@@ -69,8 +69,8 @@ def create_image(uuid: str, prompt: str) -> str:
         return None, None, None, error_message
 
 
-@sleep_and_retry
-@limits(calls=5, period=1)  # 임의 지정
+# @sleep_and_retry
+# @limits(calls=5, period=1)  # 임의 지정
 def generate_presigned_url(object_name):
     try:
         expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
