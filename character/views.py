@@ -1,6 +1,5 @@
 import json
 import random
-import os
 from api.ImageGenAPI import ImageGenAPI
 from rest_framework import status
 from rest_framework.response import Response
