@@ -105,6 +105,48 @@ if __name__ == "__main__":
 
     print(iL)
 
+    """
+    참고 코드 시작
+    """
+    # from aws import AWSManager
+    # from datetime import timedelta, datetime
+
+    # AWSManager.get_comprehend_client()  # 참고로 이것도 만들어 놨어
+    # s3_client = AWSManager.get_s3_client()
+    # bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
+    # expires_in = int(timedelta(days=1).total_seconds())  # URL의 만료 시간 (초 단위)
+
+    # s3_client.put_object(Bucket=bucket_name, Key=uuid, Body=decoded_data)
+
+    # url, expiration_time = generate_presigned_url(uuid)
+
+    # def generate_presigned_url(object_name):
+    # try:
+    #     expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
+
+    #     # Pre-signed URL 생성
+    #     response = s3_client.generate_presigned_url(
+    #         "get_object",
+    #         Params={
+    #             "Bucket": bucket_name,
+    #             "Key": object_name,
+    #             "ResponseContentType": "image/png",
+    #         },
+    #         ExpiresIn=expires_in,
+    #     )
+
+    #     return response, expiration_time
+    # except ClientError as e:
+    #     print(f"Error generating presigned URL: {e}")
+    #     return None, None
+
+    # # # 파일 삭제
+    # # s3_client.delete_object(Bucket=bucket_name, Key=key)
+
+    """
+    참고 코드 끝
+    """
+
     # (response.content) 추후 저장
 
     # 웹 쿠키 얻기 cookieStore.get("_U").then(result => console.log(result.value))
