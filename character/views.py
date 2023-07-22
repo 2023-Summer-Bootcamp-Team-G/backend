@@ -1,18 +1,17 @@
+import json
+import random
+from api.imageGenAPI import ImageGenAPI
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
+import random
 from django.core.exceptions import ObjectDoesNotExist
-
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
-
-import os
-from dotenv import load_dotenv
-from django.conf import settings
-
 from .models import Submit, Answer
 from question.models import Question, Poll
+import logging
 from accounts.models import User
 from .serializer import (
     SubmitSerializer,
@@ -39,34 +38,64 @@ from .swagger_serializer import (
 from .task import create_character
 from celery.result import AsyncResult
 
-import random
-
 fixed_question_num = 2
 
-# # .env.dev 파일 로드
-# load_dotenv(dotenv_path)
+# 로거 생성
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# 로그를 파일로 저장하려면 다음과 같이 핸들러를 설정합니다.
+file_handler = logging.FileHandler('debug.log')
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
 
 
-def extract_key_phrases(text):
-    text_encoded = text.encode("utf-8").decode("unicode_escape")
-    response = comprehend.detect_key_phrases(Text=text_encoded, LanguageCode="en")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"]]
+def extract_key_phrases(text, min_score=0.9):
+    response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
+    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"] if phrase["Score"] >= min_score]
     return key_phrases
 
 
+# APIView 클래스 정의
 class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+
+        try:
+            # 이미지 생성 및 저장
+            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            image_generator = ImageGenAPI(auth_cookie)
+            image_links = image_generator.get_images(text)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+            return Response({"error": str(e)})
+
+        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+        return Response({"key_phrases": key_phrases, "image_links": image_links})
 
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return JsonResponse({"key_phrases": key_phrases})
+
+        try:
+            # 이미지 생성 및 저장
+            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            image_generator = ImageGenAPI(auth_cookie)
+            image_links = image_generator.get_images(text)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+            return Response({"error": str(e)})
+
+        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+        return Response({"key_phrases": key_phrases, "image_links": image_links})
 
 
 def get_user_data(request):
@@ -120,7 +149,7 @@ def create_submit(poll_id, nick_name, prompt, login):
             user_id=user_id, poll_id=poll_id, nick_name=None
         ).order_by("created_at")
 
-        if nick_name == None:  # 중복키워드로 캐릭터 만들 경우
+        if nick_name is None:  # 중복키워드로 캐릭터 만들 경우
             if submit_list.count() > 1:
                 update_submit = submit_list.last()
         else:  # 캐릭터 다시 만들 경우
@@ -168,7 +197,7 @@ class Characters(APIView):
 
         for data in submit_serializer.data:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
-            if data["nick_name"] == None:
+            if data["nick_name"] is None:
                 data["nick_name"] = nick_name
                 answer_data = Answer.objects.filter(submit_id=data["id"])
                 answer_serializer = AnswerSerializer(answer_data, many=True)
@@ -311,7 +340,7 @@ class DuplicateCharacter(APIView):
     )
     def post(self, request):
         login = get_user_data(request)
-        if login == False:
+        if login is False:
             return Response(
                 {"message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED
             )
@@ -396,6 +425,25 @@ class KeywordChart(APIView):
         Response_data = {"keyword_count": keyword_count}
         return Response(Response_data, status=status.HTTP_200_OK)
 
+
+def get_ImageCreator():
+    secret_name = "BingImageCreator"
+    region_name = "ap-northeast-2"
+    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except Exception as e:
+        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
+
+    if 'SecretString' in response:
+        secret_string = response['SecretString']
+        secret = json.loads(secret_string)
+        bingCookie = secret['cookie']
+        return bingCookie
+    else:
+        raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
+    
 
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})

@@ -1,6 +1,6 @@
 from pathlib import Path
-
 from aws import AWSManager
+import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,6 +25,32 @@ AUTHENTICATION_BACKENDS = [
 SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
 SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
+
+def get_s3Key():
+    secret_name = "s3"
+    region_name = "ap-northeast-2"
+    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except Exception as e:
+        raise Exception("S3 키를 가져오는 데 실패했습니다.") from e
+
+    if 'SecretString' in response:
+        secret_string = response['SecretString']
+        secret = json.loads(secret_string)
+        access_key = secret['access_key']
+        secret_key = secret['secret_key']
+        return access_key, secret_key
+    else:
+        raise Exception("S3 키를 찾을 수 없습니다.")
+
+
+# 세션 관리를 위한 쿠키 설정
+SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
+SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
+SESSION_COOKIE_SAMESITE = "none"  # SameSite 설정
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 
 # Application definition
