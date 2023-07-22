@@ -6,11 +6,6 @@ class PostQuestionRequestSerializer(serializers.Serializer):
     questions = serializers.ListField(child=serializers.CharField())
 
 
-class QuestionIdTextSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    question_text = serializers.CharField()
-
-
 class PostQuestionResponseSerializer(serializers.Serializer):
     poll_id = serializers.IntegerField()
 

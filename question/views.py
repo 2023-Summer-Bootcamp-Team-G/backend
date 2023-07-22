@@ -26,6 +26,29 @@ def create_poll(user_id):
         return None
 
 
+def get_user_data(request):
+    session_id = request.session.session_key
+    user_id = request.session.get("user_id")
+    nick_name = request.session.get("nick_name")
+
+    if user_id and nick_name:
+        return True
+        # user_data = {
+        #     "session_id": session_id,
+        #     "user_id": user_id,
+        #     "nick_name": nick_name,
+        # }
+    else:
+        return False
+        # user_data = {
+        #     "session_id": session_id,
+        #     "user_id": None,
+        #     "nick_name": None,
+        # }
+
+    # return JsonResponse(user_data)
+
+
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
@@ -46,6 +69,10 @@ class Questions(APIView):
         responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
+        login = get_user_data(request)
+        # if not login:
+        #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
+
         user_id = request.data.get("user_id")
         poll_id = create_poll(user_id)  # poll 생성
 
