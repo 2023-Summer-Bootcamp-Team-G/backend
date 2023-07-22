@@ -1,18 +1,14 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 import json
 import random
 import os
-import boto3
-from subprocess import run
-from gTeamProject.settings import get_s3Key
-
-# from gTeamProject.settings import extract_key_phrases
+from api.ImageGenAPI import ImageGenAPI
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from aws import AWSManager
-
 from .models import Submit, Answer
 from question.models import Question, Poll
+import logging
 from .serializer import (
     SubmitSerializer,
     SubmitDetailSerializer,
@@ -34,6 +30,16 @@ from .swagger_serializer import (
 
 fixed_question_num = 2
 
+# 로거 생성
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# 로그를 파일로 저장하려면 다음과 같이 핸들러를 설정합니다.
+file_handler = logging.FileHandler('debug.log')
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 # AWS Comprehend 클라이언트를 생성
 comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
@@ -45,61 +51,41 @@ def extract_key_phrases(text, min_score=0.9):
     return key_phrases
 
 
-# Bing Image Creator 실행 함수
-def run_bing_image_creator(bing_cookie, key_phrases):
-    bing_image_creator_command = [
-        "python", "-m", "BingImageCreator",
-        "-U", bing_cookie,
-        "--prompt", " ".join(key_phrases),
-        "--output-dir", "images"
-    ]
-
-    run(bing_image_creator_command)
-
-
-def upload_images_to_s3():
-    region_name = "ap-northeast-2"
-    s3_client = AWSManager._session.client(service_name='s3', region_name=region_name)
-
-    # 이미지 저장할 S3 버킷 및 폴더 설정 (변경 필요)
-    s3_bucket = "team-g-s3"
-    s3_folder = "images"
-
-    # 이미지 파일명 지정 (필요 시 수정)
-    image_filenames = ["test1.jpeg"]
-
-    # 현재 디렉토리의 'images' 폴더 안에 이미지 파일이 있는 경우
-    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
-
-    for index, filename in enumerate(image_filenames):
-        # 이미지 파일의 절대 경로 생성
-        image_file_path = os.path.join(image_path, filename)
-
-        # 이미지 파일 데이터를 읽어와서 S3에 업로드
-        with open(image_file_path, "rb") as file:
-            key = f"{s3_folder}/{filename}"
-            s3_client.put_object(Bucket=s3_bucket, Key=key, Body=file)
-
-
 # APIView 클래스 정의
 class nlpAPI(APIView):
     def get(self, request):
         text = request.GET.get("text", "")
         key_phrases = extract_key_phrases(text)
-        return Response({"key_phrases": key_phrases})
+
+        try:
+            # 이미지 생성 및 저장
+            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            image_generator = ImageGenAPI(auth_cookie)
+            image_links = image_generator.get_images(text)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+            return Response({"error": str(e)})
+
+        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+        return Response({"key_phrases": key_phrases, "image_links": image_links})
 
     def post(self, request):
         text = request.data.get("text", "")
         key_phrases = extract_key_phrases(text)
 
-        # Bing Image Creator 실행
-        bing_cookie = get_ImageCreator()
-        run_bing_image_creator(bing_cookie, key_phrases)
+        try:
+            # 이미지 생성 및 저장
+            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            image_generator = ImageGenAPI(auth_cookie)
+            image_links = image_generator.get_images(text)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+            return Response({"error": str(e)})
 
-        # 이미지를 S3에 업로드
-        upload_images_to_s3()
-
-        return Response({"key_phrases": key_phrases})
+        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+        return Response({"key_phrases": key_phrases, "image_links": image_links})
 
 
 def extract_keyword(answer):
