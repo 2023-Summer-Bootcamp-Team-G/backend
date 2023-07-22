@@ -406,13 +406,14 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
             )  # status code 수정
 
-        response_data = {"result_url": task.get()["result_url"]}
+        response_data = {"result_url": task.get()["result_url"],
+                         "keyword": task.get()["keyword"]}
 
         return Response(response_data, status=status.HTTP_200_OK)
 
 
 class CharacterInfo(APIView):
-    @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
+    @swagger_auto_schema(responses={200: GetCharacterInfoResponseSerializer})
     def get(self, request, task_id):  # 최종 결과물
         task = AsyncResult(task_id)
         submit_id = task.get()["submit_id"]
@@ -427,8 +428,8 @@ class CharacterInfo(APIView):
 
 class FinalSubmit(APIView):
     @swagger_auto_schema(
-        request_body=PostCharacterRequestSerializer,
-        responses=(201, PostFinalSubmitRequestSerializer),
+        request_body=PostFinalSubmitRequestSerializer,
+        responses={201: PostFinalSubmitResponseSerializer},
     )
     def post(self, request):  # url선택시 submit에 url 저장
         task_id = request.data.get("task_id")

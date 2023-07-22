@@ -58,6 +58,7 @@ class GetKeywordChartResponseSerializer(serializers.Serializer):
 
 class GetURLsResponseSerializer(serializers.Serializer):
     result_url = serializers.ListField()
+    keyword = serializers.ListField(child=serializers.CharField())
 
 
 class GetCharacterInfoResponseSerializer(serializers.Serializer):
