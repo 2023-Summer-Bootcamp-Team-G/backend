@@ -8,18 +8,18 @@ services:
     # 터미널 명령어라고 생각
     # command: python manage.py runserver 0.0.0.0:8000
     # 위의 방식에서 Gunicorn으로 변경
-    command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
+    # command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
 
     # 로컬 프로젝트 폴더와 도커의 폴더를 연결
-    volumes:
-      - ./:/usr/src/app/
+    # volumes:
+    #   - ./:/usr/src/app/
 
     ports:
       - "8000:8000"
 
     # 개발환경 저장
-    env_file:
-      - ./.env
+    # env_file:
+    #   - ./.env
 
   rabbit:
     container_name: rabbitmq

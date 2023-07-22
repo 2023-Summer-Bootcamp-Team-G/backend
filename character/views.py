@@ -31,6 +31,10 @@ from .swagger_serializer import (
     PostCharacterRequestSerializer,
     PostCharacterResponseSerializer,
     GetKeywordChartResponseSerializer,
+    GetURLsResponseSerializer,
+    GetCharacterInfoResponseSerializer,
+    PostFinalSubmitRequestSerializer,
+    PostFinalSubmitResponseSerializer,
 )
 from .task import create_character
 from celery.result import AsyncResult
@@ -95,8 +99,6 @@ def extract_keyword(answer):
 
 
 def create_submit(poll_id, nick_name, prompt, login):
-    # result_url = create_image(prompt)
-
     poll = Poll.objects.get(id=poll_id)
     user_id = poll.user_id
 
@@ -395,7 +397,8 @@ class KeywordChart(APIView):
         return Response(Response_data, status=status.HTTP_200_OK)
 
 
-class Task(APIView):
+class URLs(APIView):  # 4개의 캐릭터 url 받아오기
+    @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
     def get(self, request, task_id):
         task = AsyncResult(task_id)
         if not task.ready():
@@ -403,7 +406,16 @@ class Task(APIView):
                 {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
             )  # status code 수정
 
-        #         response_data = task.get()["submit_data"] # DB 에서 조회
+        response_data = {"result_url": task.get()["result_url"],
+                         "keyword": task.get()["keyword"]}
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class CharacterInfo(APIView):
+    @swagger_auto_schema(responses={200: GetCharacterInfoResponseSerializer})
+    def get(self, request, task_id):  # 최종 결과물
+        task = AsyncResult(task_id)
         submit_id = task.get()["submit_id"]
         keyword = task.get()["keyword"]
 
@@ -412,3 +424,23 @@ class Task(APIView):
         response_data["keyword"] = keyword
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class FinalSubmit(APIView):
+    @swagger_auto_schema(
+        request_body=PostFinalSubmitRequestSerializer,
+        responses={201: PostFinalSubmitResponseSerializer},
+    )
+    def post(self, request):  # url선택시 submit에 url 저장
+        task_id = request.data.get("task_id")
+        index = request.data.get("index")
+        task = AsyncResult(task_id)
+
+        result_url = task.get()["result_url"][index]
+        submit_id = task.get()["submit_id"]
+
+        submit = Submit.objects.get(id=submit_id)
+        submit.result_url = result_url
+        submit.save()
+
+        return Response({"message": submit_id}, status=status.HTTP_201_CREATED)
