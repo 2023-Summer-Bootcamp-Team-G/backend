@@ -19,4 +19,4 @@ services:
 
     # 개발 환경 저장
     env_file:
-      - ./.env.prod #개발 환경 설정 파일은 .env.dev 대신 env.prod 권장
+      - ./.env #개발 환경 설정 파일은 .env.dev 대신 env.prod 권장
