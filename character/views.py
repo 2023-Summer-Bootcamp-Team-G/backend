@@ -110,7 +110,6 @@ def create_submit(poll_id, nick_name, prompt):
         "result_url": result_url,
         "nick_name": nick_name,
     }
-
     submit_serializer = SubmitCreateSerializer(data=submit_data)
     if submit_serializer.is_valid():
         submit_instance = submit_serializer.save()
