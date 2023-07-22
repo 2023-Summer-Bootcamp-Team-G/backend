@@ -66,7 +66,7 @@ def upload_images_to_s3():
     s3_folder = "images"
 
     # 이미지 파일명 지정 (필요 시 수정)
-    image_filenames = ["2.jpeg"]
+    image_filenames = ["test1.jpeg"]
 
     # 현재 디렉토리의 'images' 폴더 안에 이미지 파일이 있는 경우
     image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
@@ -155,7 +155,7 @@ class Characters(APIView):
 
         for data in submit_serializer.data:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
-            if data["nick_name"] == None:
+            if data["nick_name"] is None:
                 answer_data = Answer.objects.filter(submit_id=data["id"])
                 answer_serializer = AnswerSerializer(answer_data, many=True)
 
