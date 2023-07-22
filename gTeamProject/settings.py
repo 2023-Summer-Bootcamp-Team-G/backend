@@ -21,6 +21,11 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
+# 세션 관리를 위한 쿠키 설정
+SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
+SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
+SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 
 def get_s3Key():
     secret_name = "s3"
@@ -63,6 +68,8 @@ INSTALLED_APPS = [
     "character",
     "drf_yasg",
     "corsheaders",
+    "django_celery_results",
+    "django_redis",
 ]
 
 # Gunicorn 설정
@@ -170,3 +177,18 @@ STATIC_ROOT = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
+
+# CELERY SETTINGS
+CELERY_TIMEZONE = "Asia/Seoul"
+CELERY_BROKER_URL = "amqp://rabbitmq:5672"
+CELERY_RESULT_BACKEND = "redis://redis:6379"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379",
+    }
+}
