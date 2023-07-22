@@ -31,3 +31,20 @@ class AWSManager:
 
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
         return json.loads(get_secret_value_response["SecretString"])
+
+    @classmethod
+    def get_s3_client(cls):
+        session = cls.get_session()
+        secrets = cls.get_secret("s3")
+
+        return session.client(
+            "s3",
+            aws_access_key_id=secrets["access_key"],
+            aws_secret_access_key=secrets["secret_key"],
+        )
+
+    @classmethod
+    def get_comprehend_client(cls):
+        session = cls.get_session()
+
+        return session.client("comprehend")
