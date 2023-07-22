@@ -1,6 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import JsonResponse
+
 from .serializer import (
     QuestionSerializer,
     UpdatedQuestionSerializer,
@@ -15,6 +17,8 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
+from django.http import JsonResponse
+from django.contrib.auth import authenticate
 
 
 def create_poll(user_id):
@@ -31,6 +35,20 @@ def get_user_data(request):
     user_id = request.session.get("user_id")
     nick_name = request.session.get("nick_name")
 
+    # 로그아웃 상태 확인
+    if "logout" in request.GET:
+        # 세션 데이터 삭제
+        request.session.flush()
+        user_id = None
+        nick_name = None
+
+    user_data = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "nick_name": nick_name,
+    }
+
+    return JsonResponse(user_data)
     if user_id and nick_name:
         return True
         # user_data = {
