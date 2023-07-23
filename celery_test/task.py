@@ -1,4 +1,5 @@
-from celery import shared_task
+# from celery import shared_task
+from .celery import app
 
 
 def create_image(prompt):
@@ -20,7 +21,8 @@ def create_image(prompt):
     return url
 
 
-@shared_task
+# @shared_task
+@app.task
 def create_character(submit_id, prompt):
     result_url = create_image(prompt)
     return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}

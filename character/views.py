@@ -34,7 +34,7 @@ from .swagger_serializer import (
     PostFinalSubmitRequestSerializer,
     PostFinalSubmitResponseSerializer,
 )
-from .task import create_character
+from celery_test.task import create_character
 from celery.result import AsyncResult
 from api.api import upload_img_to_s3
 
@@ -478,7 +478,9 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
         task = AsyncResult(task_id)
         if not task.ready():
             return Response(
-                {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
+                # {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
+                {"status": task.state},
+                status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
 
         response_data = {

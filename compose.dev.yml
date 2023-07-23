@@ -17,8 +17,8 @@ services:
 
   celery:
     container_name: celery_worker
-    build: .
-    command: sh -c "celery -A gTeamProject worker --loglevel=info"
+    build: ./celery_test
+    command: sh -c "celery -A celery_test worker --loglevel=info"
     depends_on:
       - rabbit
       - redis

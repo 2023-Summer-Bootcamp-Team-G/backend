@@ -143,7 +143,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
 
 # CELERY SETTINGS
-CELERY_TIMEZONE = "Asia/Seoul"
+# CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_BROKER_URL = "amqp://rabbitmq:5672"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 CELERY_ACCEPT_CONTENT = ["json"]
