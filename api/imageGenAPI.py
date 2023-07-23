@@ -50,6 +50,10 @@ class ImageGenAPI:
             timeout=200,
         )
 
+        # 응답 내용을 확인하여 오류 메시지 또는 예상치 못한 내용이 있는지 확인
+        if "errorMessage" in response.text.lower():
+            print("Error Message:", response.text)
+
         res_message = response.text.lower()
 
         if "this prompt is being reviewed" in res_message:
@@ -58,14 +62,24 @@ class ImageGenAPI:
             raise Exception(Error.ERROR_BLOCKED_PROMPT.value)
 
         if response.status_code != 302:
-            # error?
-            pass
+            # 오류 처리
+            print(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+            raise Exception(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
 
-        # Get redirect URL
-        redirect_url = response.headers["Location"].replace("&nfy=1", "")
-        request_id = redirect_url.split("id=")[-1]
+        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
+        redirect_url = response.headers.get("Location")
+        if not redirect_url:
+            raise Exception("'Location' header not found in the response.")
+
+        # # Get redirect URL
+        # redirect_url = response.headers["Location"].replace("&nfy=1", "")
+        # request_id = redirect_url.split("id=")[-1]
         self.session.get(f"{BING_URL}{redirect_url}")
-        polling_url = f"{BING_URL}/images/create/async/results/{request_id}?q={url_encoded_prompt}"
+        polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
 
         start_wait = time.time()
 

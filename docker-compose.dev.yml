@@ -11,12 +11,11 @@ services:
     # command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
 
     # 로컬 프로젝트 폴더와 도커의 폴더를 연결
-    # volumes:
-    #   - ./:/usr/src/app/
+    volumes:
+      - ./:/usr/src/app
 
     ports:
       - "8000:8000"
-
     # 개발환경 저장
     # env_file:
     #   - ./.env
@@ -30,13 +29,13 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     ports:
-    # 메시지 대기열을 사용하려는 서버의 경우에만 5672필요
+      # 메시지 대기열을 사용하려는 서버의 경우에만 5672필요
       - 5672:5672
-    # management
+      # management
       - 15672:15672
     expose:
       - "15672"
-  
+
   celery_worker:
     container_name: celery_worker
     build:

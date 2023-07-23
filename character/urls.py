@@ -12,7 +12,7 @@ from .views import (
 
 
 urlpatterns = [
-    path("", Characters.as_view()),
+    # path("", Characters.as_view()),
     path("<int:character_id>", CharacterDetail.as_view()),
     path("chart", KeywordChart.as_view()),
     path("duplicate", DuplicateCharacter.as_view()),
