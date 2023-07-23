@@ -1,50 +1,20 @@
 # syntax=docker/dockerfile:1
 
-ARG PYTHON_VERSION=3.9.9
+ARG PYTHON_VERSION=3.10.12
 FROM python:${PYTHON_VERSION}-slim as base
 
-# Prevents Python from writing pyc files.
-ENV PYTHONDONTWRITEBYTECODE=1
+# Python은 가끔 소스 코드를 컴파일할 때 확장자가 .pyc인 파일을 생성한다.
+# 도커를 이용할 때, .pyc 파일이 필요하지 않으므로 .pyc 파일을 생성하지 않도록 한다.
+ENV PYTHONDONTWRITEBYTECODE 1
 
-# Keeps Python from buffering stdout and stderr to avoid situations where
-# the application crashes without emitting any logs due to buffering.
-ENV PYTHONUNBUFFERED=1
+# Python 로그가 버퍼링 없이 출력
+ENV PYTHONUNBUFFERED 1
 
-## -----------------------------------------------------
-##EC2에서 돌릴 경우
-#
-#RUN apt-get -y update
-#RUN apt-get -y install vim
-#
-## 작업 디렉토리 생성
-#RUN mkdir /srv/docker-server
-#ADD . /src/docker-server
-#
-#WORKDIR /srv/docker-server
-#
-### 의존성 패키지 설치
-##RUN apt install --upgrade pip
-##RUN apt install -r requirements.txt
-#
-## -----------------------------------------------------
+ARG REGION_NAME=ap-northeast-2
+ENV REGION_NAME=${REGION_NAME}
 
-##local에서 돌릴 경우
-#ADD . D:/Teacheer/Docker
-## 작업 디렉토리 설정
-#WORKDIR D:/Teacheer/Docker
-#
-## 의존성 패키지 설치
-#COPY requirements.txt ./Docker/requirements.txt
-#COPY manage.py ./Docker/manage.py
-#
-##RUN pip install --upgrade pip # pip 업글
-##RUN pip install -r requirements.txt # 필수 패키지 설치
-#
-## 소스 코드 복사
-#COPY . ./Docker
-
-# WORKDIR /mainapp
-WORKDIR /app
+# 프로젝트의 작업 폴더 지정
+WORKDIR /usr/src/app
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
@@ -57,6 +27,10 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
+
+RUN apt-get update \
+    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
@@ -73,9 +47,6 @@ RUN python manage.py collectstatic
 
 USER appuser
 
-# COPY . .
-
 EXPOSE 8000
 
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD gunicorn 'gTeamProject.wsgi' --bind=0.0.0.0:8000
+CMD gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload

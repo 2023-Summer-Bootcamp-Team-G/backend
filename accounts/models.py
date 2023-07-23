@@ -16,7 +16,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True)
 
-    USERNAME_FIELD = 'user_id'
+    USERNAME_FIELD = "user_id"
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()

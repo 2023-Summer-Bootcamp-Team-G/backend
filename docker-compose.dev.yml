@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  # 실행할 서비스 - web
+  web:
+    # Dockerfile의 위치, 현재 폴더를 build
+    build: .
+    # 터미널 명령어라고 생각
+    # command: python manage.py runserver 0.0.0.0:8000
+    # 위의 방식에서 Gunicorn으로 변경
+    # command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
+
+    # 로컬 프로젝트 폴더와 도커의 폴더를 연결
+    volumes:
+      - ./:/usr/src/app
+
+    ports:
+      - "8000:8000"
+    # 개발환경 저장
+    # env_file:
+    #   - ./.env
+
+  rabbit:
+    container_name: rabbitmq
+    hostname: rabbit
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    environment:
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    ports:
+      # 메시지 대기열을 사용하려는 서버의 경우에만 5672필요
+      - 5672:5672
+      # management
+      - 15672:15672
+    expose:
+      - "15672"
+
+  celery_worker:
+    container_name: celery_worker
+    build:
+      context: ./
+    volumes:
+      - ./:/usr/src/app/
+    depends_on:
+      - rabbit
+      - redis
+    command: sh -c "celery -A gTeamProject worker --loglevel=info"
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    hostname: redis
+    ports:
+      - "6379:6379"

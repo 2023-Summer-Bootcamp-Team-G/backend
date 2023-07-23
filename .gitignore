@@ -178,3 +178,11 @@ crashlytics-build.properties
 fabric.properties
 
 .vscode/
+.env.prod
+.env.prod.db
+.env.dev
+
+.DS_Store
+static/
+/character/images
+images/
