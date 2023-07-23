@@ -1,9 +1,7 @@
-import os
+import requests
 import re
 import time
 import random
-import requests
-
 from enum import Enum
 
 BING_URL = "https://www.bing.com"
@@ -30,10 +28,7 @@ class Error(Enum):
 
 
 class ImageGenAPI:
-    def __init__(
-        self,
-        auth_cookie: str,
-    ):
+    def __init__(self, auth_cookie: str):
         self.session: requests.Session = requests.Session()
         self.session.headers = HEADERS
         self.session.cookies.set("_U", auth_cookie)
@@ -50,6 +45,10 @@ class ImageGenAPI:
             timeout=200,
         )
 
+        # 응답 내용을 확인하여 오류 메시지 또는 예상치 못한 내용이 있는지 확인
+        if "errorMessage" in response.text.lower():
+            print("Error Message:", response.text)
+
         res_message = response.text.lower()
 
         if "this prompt is being reviewed" in res_message:
@@ -58,14 +57,17 @@ class ImageGenAPI:
             raise Exception(Error.ERROR_BLOCKED_PROMPT.value)
 
         if response.status_code != 302:
-            # error?
-            pass
+            # 오류 처리
+            print(f"Failed to get a valid response. Status Code: {response.status_code}")
+            raise Exception(f"Failed to get a valid response. Status Code: {response.status_code}")
 
-        # Get redirect URL
-        redirect_url = response.headers["Location"].replace("&nfy=1", "")
-        request_id = redirect_url.split("id=")[-1]
+        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
+        redirect_url = response.headers.get("Location")
+        if not redirect_url:
+            raise Exception("'Location' header not found in the response.")
+
         self.session.get(f"{BING_URL}{redirect_url}")
-        polling_url = f"{BING_URL}/images/create/async/results/{request_id}?q={url_encoded_prompt}"
+        polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
 
         start_wait = time.time()
 
@@ -86,25 +88,9 @@ class ImageGenAPI:
         image_links = re.findall(r'src="([^"]+)"', response.text)
 
         if len(image_links) == 0:
+            print("No images found.")
             raise Exception(Error.ERROR_NO_IMAGES.value)
 
         normal_image_links = [link.split("?w=")[0] for link in image_links]
 
         return normal_image_links
-
-
-if __name__ == "__main__":
-    prompt = "a 4d shaped hamburger, digital art"
-    # prompt = "여우 분홍색 지브리 개 기타 도서관"
-
-    image_generator = ImageGenAPI(
-        os.getenv("BING_SESSION_ID")
-    )  # .env 에 추가, BING_SESSION_ID=ID
-
-    iL = image_generator.get_images(prompt)
-
-    print(iL)
-
-    # (response.content) 추후 저장
-
-    # 웹 쿠키 얻기 cookieStore.get("_U").then(result => console.log(result.value))
