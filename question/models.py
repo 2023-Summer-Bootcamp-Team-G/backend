@@ -1,14 +1,6 @@
 from django.db import models
+from models import BaseModel
 from accounts.models import User
-
-
-class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True)
-
-    class Meta:
-        abstract = True
 
 
 class Poll(BaseModel):

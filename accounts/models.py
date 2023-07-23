@@ -1,6 +1,10 @@
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-from django.contrib.auth.models import BaseUserManager
+from models import BaseModel
+from django.contrib.auth.models import (
+    BaseUserManager,
+    AbstractBaseUser,
+    PermissionsMixin,
+)
 
 
 class CustomUserManager(BaseUserManager):
@@ -8,13 +12,10 @@ class CustomUserManager(BaseUserManager):
         return self.get(user_id=user_id)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     user_id = models.CharField(max_length=200, primary_key=True)
     nick_name = models.CharField(max_length=200)
     password = models.CharField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True)
 
     USERNAME_FIELD = "user_id"
     REQUIRED_FIELDS = []

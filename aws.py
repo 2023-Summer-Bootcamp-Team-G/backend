@@ -9,6 +9,9 @@ load_dotenv()
 
 class AWSManager:
     _session = None
+    _secretsmanager_client = None
+    _s3_client = None
+    _comprehend_client = None
 
     @classmethod
     def get_session(cls):
@@ -26,25 +29,30 @@ class AWSManager:
 
     @classmethod
     def get_secret(cls, secret_name):
-        session = cls.get_session()
-        client = session.client(service_name="secretsmanager")
+        if cls._secretsmanager_client is None:
+            session = cls.get_session()
+            cls._secretsmanager_client = session.client(service_name="secretsmanager")
 
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        get_secret_value_response = cls._secretsmanager_client.get_secret_value(
+            SecretId=secret_name
+        )
         return json.loads(get_secret_value_response["SecretString"])
 
     @classmethod
     def get_s3_client(cls):
-        session = cls.get_session()
-        secrets = cls.get_secret("s3")
-
-        return session.client(
-            "s3",
-            aws_access_key_id=secrets["access_key"],
-            aws_secret_access_key=secrets["secret_key"],
-        )
+        if cls._s3_client is None:
+            session = cls.get_session()
+            secrets = cls.get_secret("s3")
+            cls._s3_client = session.client(
+                "s3",
+                aws_access_key_id=secrets["access_key"],
+                aws_secret_access_key=secrets["secret_key"],
+            )
+        return cls._s3_client
 
     @classmethod
     def get_comprehend_client(cls):
-        session = cls.get_session()
-
-        return session.client("comprehend")
+        if cls._comprehend_client is None:
+            session = cls.get_session()
+            cls._comprehend_client = session.client("comprehend")
+        return cls._comprehend_client

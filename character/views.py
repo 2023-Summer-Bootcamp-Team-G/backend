@@ -5,11 +5,8 @@ from api.imageGenAPI import ImageGenAPI
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.http import JsonResponse
-import random
 from django.core.exceptions import ObjectDoesNotExist
 
-# from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
 from .models import Submit, Answer
 from question.models import Question, Poll
@@ -54,8 +51,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-# AWS Comprehend 클라이언트를 생성
-comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManager._session
+comprehend = AWSManager.get_comprehend_client()
 
 
 def extract_key_phrases(text, min_score=0.9):
@@ -80,7 +76,9 @@ class nlpAPI(APIView):
             # 이미지 생성 및 저장
             start_time = time.time()
 
-            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            auth_cookie = (
+                get_ImageCreator_Cookie()
+            )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
             image_generator = ImageGenAPI(auth_cookie)
             image_links = image_generator.get_images(text)
 
@@ -107,7 +105,9 @@ class nlpAPI(APIView):
             # 이미지 생성 및 저장
             start_time = time.time()
 
-            auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+            auth_cookie = (
+                get_ImageCreator_Cookie()
+            )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
             image_generator = ImageGenAPI(auth_cookie)
             image_links = image_generator.get_images(text)
 
@@ -455,25 +455,21 @@ class KeywordChart(APIView):
         return Response(Response_data, status=status.HTTP_200_OK)
 
 
-def get_ImageCreator():
-    secret_name = "BingImageCreator"
-    region_name = "ap-northeast-2"
-    client = AWSManager._session.client(
-        service_name="secretsmanager", region_name=region_name
-    )
-
+def get_ImageCreator_Cookie():
     try:
-        response = client.get_secret_value(SecretId=secret_name)
+        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
+
+        return bingCookie
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
-    if "SecretString" in response:
-        secret_string = response["SecretString"]
-        secret = json.loads(secret_string)
-        bingCookie = secret["cookie"]
-        return bingCookie
-    else:
-        raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
+    # if "SecretString" in response:
+    #     secret_string = response["SecretString"]
+    #     secret = json.loads(secret_string)
+    #     bingCookie = secret["cookie"]
+    #     return bingCookie
+    # else:
+    #     raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
 
 
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
