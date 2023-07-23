@@ -1,6 +1,9 @@
 import time
+import uuid
 import base64
-import openai
+
+# import openai
+import requests
 
 from datetime import timedelta, datetime
 from aws import AWSManager
@@ -9,64 +12,79 @@ from botocore.exceptions import ClientError
 
 # from ratelimit import limits, sleep_and_retry
 
-openai.api_key = AWSManager.get_secret("openai")["api_key"]
+# openai.api_key = AWSManager.get_secret("openai")["api_key"]
 
-# API_REQUEST_LIMIT = 1.2
-# __requestTimeList__ = -1.0
 
 s3_client = AWSManager.get_s3_client()
-
 bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
-# print("bucket_name", bucket_name)
-
-expires_in = int(timedelta(days=1).total_seconds())  # URL의 만료 시간 (초 단위)
+expires_in = int(timedelta(days=7).total_seconds())  # URL의 만료 시간 (초 단위)
 
 
-# @sleep_and_retry
-# @limits(calls=50, period=60)
-def create_image(uuid: str, prompt: str) -> str:
-    # 동기 작업 수행
-    # global __requestTimeList__
-
-    # dt = time.perf_counter() - __requestTimeList__
-    # if dt < API_REQUEST_LIMIT:
-    #     time.sleep(API_REQUEST_LIMIT - dt)
-
+def upload_img_to_s3(url):
     try:
-        start_time = time.time()
-        response = openai.Image.create(
-            prompt=prompt, n=1, size="256x256", response_format="b64_json"
-        )  # user: id of end-user, for detect abuse
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise Exception(f"Failed to download the JPEG file from URL: {url}")
 
-        # for d in response['data']:
-        #     print(d['url'])
+        file_key = str(uuid.uuid4()) + ".jpeg"
+        s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=response.content)
 
-        # __requestTimeList__ = time.perf_counter()
+        url, expiration_time = generate_presigned_url(file_key)
+        return url
 
-        image_data = response["data"][0]["b64_json"]
-        decoded_data = base64.b64decode(image_data)
+    except ClientError as e:
+        raise Exception(f"Error generating the presigned URL: {str(e)}")
+    except Exception as e:
+        raise Exception(
+            f"Error processing image and generating presigned URL: {str(e)}"
+        )
 
-        s3_client.put_object(Bucket=bucket_name, Key=uuid, Body=decoded_data)
 
-        # except ClientError as e: # aws 에러처리 추가
+# # @sleep_and_retry
+# # @limits(calls=50, period=60)
+# def create_image(uuid: str, prompt: str) -> str:
+#     # 동기 작업 수행
+#     # global __requestTimeList__
 
-        url, expiration_time = generate_presigned_url(uuid)
+#     # dt = time.perf_counter() - __requestTimeList__
+#     # if dt < API_REQUEST_LIMIT:
+#     #     time.sleep(API_REQUEST_LIMIT - dt)
 
-        if not url:
-            return None, None, None, "Error generating presigned URL"
+#     try:
+#         start_time = time.time()
+#         response = openai.Image.create(
+#             prompt=prompt, n=1, size="256x256", response_format="b64_json"
+#         )  # user: id of end-user, for detect abuse
 
-        end_time = time.time()
-        processing_time = end_time - start_time
+#         # for d in response['data']:
+#         #     print(d['url'])
 
-        print("pre-signed URL:", url)
+#         # __requestTimeList__ = time.perf_counter()
 
-        return url, processing_time, expiration_time, None
+#         image_data = response["data"][0]["b64_json"]
+#         decoded_data = base64.b64decode(image_data)
 
-    except openai.error.OpenAIError as e:
-        error_message = e.error  # str(e.error)
-        print(e.http_status, error_message)
+#         s3_client.put_object(Bucket=bucket_name, Key=uuid, Body=decoded_data)
 
-        return None, None, None, error_message
+#         # except ClientError as e: # aws 에러처리 추가
+
+#         url, expiration_time = generate_presigned_url(uuid)
+
+#         if not url:
+#             return None, None, None, "Error generating presigned URL"
+
+#         end_time = time.time()
+#         processing_time = end_time - start_time
+
+#         print("pre-signed URL:", url)
+
+#         return url, processing_time, expiration_time, None
+
+#     except openai.error.OpenAIError as e:
+#         error_message = e.error  # str(e.error)
+#         print(e.http_status, error_message)
+
+#         return None, None, None, error_message
 
 
 # @sleep_and_retry
@@ -91,6 +109,54 @@ def generate_presigned_url(object_name):
         print(f"Error generating presigned URL: {e}")
         return None, None
 
+
+# class TaskStatus(str, Enum):
+#     RUNNING = "running"
+#     COMPLETED = "completed"
+#     ERROR = "error"
+
+
+# async def get_task_result(task_id: str):
+#     logging.info("get_check_task")
+
+#     # 비동기 작업 결과 확인 (롱 폴링)
+#     if task_id not in tasks:
+#         raise HTTPException(status_code=404, detail="Task not found")
+
+#     iteration = 0
+#     while tasks[task_id]["status"] == TaskStatus.RUNNING and iteration < 5:
+#         await asyncio.sleep(0.2)
+#         iteration += 1
+
+#     if tasks[task_id]["status"] == TaskStatus.RUNNING:
+#         return Response(status_code=202)
+#     elif tasks[task_id]["status"] == TaskStatus.COMPLETED:
+#         result = tasks[task_id]["result"]
+#         processing_time = tasks[task_id]["processing_time"]
+#         return {"result": result, "processing_time": processing_time}
+#     else:
+#         raise HTTPException(status_code=500, detail=tasks[task_id]["error_message"])
+
+
+# def renew_urls():
+#     current_time = datetime.utcnow()
+#     expiration_threshold = timedelta(hours=2)
+
+#     expired_urls = collection.find(
+#         {"expiration_time": {"$lt": current_time + expiration_threshold}}
+#     )
+
+#     for url_data in expired_urls:
+#         object_name = url_data["object_name"]
+
+#         url, expiration_time = generate_presigned_url(object_name)
+#         if url is not None:
+#             collection.update_one(
+#                 {"object_name": object_name},
+#                 {"$set": {"result": url, "expiration_time": expiration_time}},
+#             )
+#         else:
+#             logging.error("갱신된 사전 서명된 URL 생성 실패")
 
 # # 객체 목록 출력
 # response = s3_client.list_objects(Bucket=bucket_name)

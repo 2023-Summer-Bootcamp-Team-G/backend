@@ -1,4 +1,5 @@
 import json
+import time
 import random
 from api.imageGenAPI import ImageGenAPI
 from rest_framework import status
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 from django.http import JsonResponse
 import random
 from django.core.exceptions import ObjectDoesNotExist
+
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
 from .models import Submit, Answer
@@ -37,6 +39,7 @@ from .swagger_serializer import (
 )
 from .task import create_character
 from celery.result import AsyncResult
+from api.api import upload_img_to_s3
 
 fixed_question_num = 2
 
@@ -45,9 +48,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # 로그를 파일로 저장하려면 다음과 같이 핸들러를 설정합니다.
-file_handler = logging.FileHandler('debug.log')
+file_handler = logging.FileHandler("debug.log")
 file_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -57,28 +60,44 @@ comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManage
 
 def extract_key_phrases(text, min_score=0.9):
     response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"] if phrase["Score"] >= min_score]
+    key_phrases = [
+        phrase["Text"]
+        for phrase in response["KeyPhrases"]
+        if phrase["Score"] >= min_score
+    ]
     return key_phrases
 
 
 # APIView 클래스 정의
 class nlpAPI(APIView):
     def get(self, request):
-        text = request.GET.get("text", "")
+        text = request.GET.get(
+            "text", "This is a task sentence for keyword extraction."
+        )
         key_phrases = extract_key_phrases(text)
 
         try:
             # 이미지 생성 및 저장
+            start_time = time.time()
+
             auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
             image_generator = ImageGenAPI(auth_cookie)
             image_links = image_generator.get_images(text)
+
+            processing_time = time.time() - start_time
         except Exception as e:
             print(f"Error: {str(e)}")
             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
             return Response({"error": str(e)})
 
         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-        return Response({"key_phrases": key_phrases, "image_links": image_links})
+        return Response(
+            {
+                "key_phrases": key_phrases,
+                "image_links": image_links,
+                "processing_time": processing_time,
+            }
+        )
 
     def post(self, request):
         text = request.data.get("text", "")
@@ -86,16 +105,26 @@ class nlpAPI(APIView):
 
         try:
             # 이미지 생성 및 저장
+            start_time = time.time()
+
             auth_cookie = get_ImageCreator()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
             image_generator = ImageGenAPI(auth_cookie)
             image_links = image_generator.get_images(text)
+
+            processing_time = time.time() - start_time
         except Exception as e:
             print(f"Error: {str(e)}")
             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
             return Response({"error": str(e)})
 
         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-        return Response({"key_phrases": key_phrases, "image_links": image_links})
+        return Response(
+            {
+                "key_phrases": key_phrases,
+                "image_links": image_links,
+                "processing_time": processing_time,
+            }
+        )
 
 
 def get_user_data(request):
@@ -429,21 +458,23 @@ class KeywordChart(APIView):
 def get_ImageCreator():
     secret_name = "BingImageCreator"
     region_name = "ap-northeast-2"
-    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+    client = AWSManager._session.client(
+        service_name="secretsmanager", region_name=region_name
+    )
 
     try:
         response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
-    if 'SecretString' in response:
-        secret_string = response['SecretString']
+    if "SecretString" in response:
+        secret_string = response["SecretString"]
         secret = json.loads(secret_string)
-        bingCookie = secret['cookie']
+        bingCookie = secret["cookie"]
         return bingCookie
     else:
         raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
-    
+
 
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
@@ -454,8 +485,10 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
             )  # status code 수정
 
-        response_data = {"result_url": task.get()["result_url"],
-                         "keyword": task.get()["keyword"]}
+        response_data = {
+            "result_url": task.get()["result_url"],
+            "keyword": task.get()["keyword"],
+        }
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -487,8 +520,10 @@ class FinalSubmit(APIView):
         result_url = task.get()["result_url"][index]
         submit_id = task.get()["submit_id"]
 
+        final_url = upload_img_to_s3(result_url)
+
         submit = Submit.objects.get(id=submit_id)
-        submit.result_url = result_url
+        submit.result_url = final_url
         submit.save()
 
         return Response({"message": submit_id}, status=status.HTTP_201_CREATED)
