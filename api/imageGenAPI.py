@@ -3,6 +3,7 @@ import re
 import time
 import random
 from enum import Enum
+import os
 
 BING_URL = "https://www.bing.com"
 
