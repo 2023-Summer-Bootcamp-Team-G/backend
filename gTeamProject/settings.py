@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     "character",
     "drf_yasg",
     "corsheaders",
-    "django_celery_results",
+    # "django_celery_results",
     "django_redis",
 ]
 
