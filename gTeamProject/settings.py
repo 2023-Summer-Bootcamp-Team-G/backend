@@ -31,18 +31,20 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 def get_s3Key():
     secret_name = "s3"
     region_name = "ap-northeast-2"
-    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+    client = AWSManager._session.client(
+        service_name="secretsmanager", region_name=region_name
+    )
 
     try:
         response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
         raise Exception("S3 키를 가져오는 데 실패했습니다.") from e
 
-    if 'SecretString' in response:
-        secret_string = response['SecretString']
+    if "SecretString" in response:
+        secret_string = response["SecretString"]
         secret = json.loads(secret_string)
-        access_key = secret['access_key']
-        secret_key = secret['secret_key']
+        access_key = secret["access_key"]
+        secret_key = secret["secret_key"]
         return access_key, secret_key
     else:
         raise Exception("S3 키를 찾을 수 없습니다.")
@@ -69,8 +71,8 @@ INSTALLED_APPS = [
     "character",
     "drf_yasg",
     "corsheaders",
-    # "django_celery_results",
     "django_redis",
+    "django_prometheus",
 ]
 
 # Gunicorn 설정
@@ -85,6 +87,7 @@ WSGI_APPLICATION = "gTeamProject.wsgi.application"
 
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -93,6 +96,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "gTeamProject.urls"

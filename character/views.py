@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from django.http import JsonResponse
 import random
 from django.core.exceptions import ObjectDoesNotExist
+
 # from gTeamProject.settings import extract_key_phrases
 from aws import AWSManager
 from .models import Submit, Answer
@@ -45,9 +46,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # 로그를 파일로 저장하려면 다음과 같이 핸들러를 설정합니다.
-file_handler = logging.FileHandler('debug.log')
+file_handler = logging.FileHandler("debug.log")
 file_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -57,7 +58,11 @@ comprehend = AWSManager._session.client("comprehend")  # 임시 설정 AWSManage
 
 def extract_key_phrases(text, min_score=0.9):
     response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
-    key_phrases = [phrase["Text"] for phrase in response["KeyPhrases"] if phrase["Score"] >= min_score]
+    key_phrases = [
+        phrase["Text"]
+        for phrase in response["KeyPhrases"]
+        if phrase["Score"] >= min_score
+    ]
     return key_phrases
 
 
@@ -429,21 +434,23 @@ class KeywordChart(APIView):
 def get_ImageCreator():
     secret_name = "BingImageCreator"
     region_name = "ap-northeast-2"
-    client = AWSManager._session.client(service_name='secretsmanager', region_name=region_name)
+    client = AWSManager._session.client(
+        service_name="secretsmanager", region_name=region_name
+    )
 
     try:
         response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
-    if 'SecretString' in response:
-        secret_string = response['SecretString']
+    if "SecretString" in response:
+        secret_string = response["SecretString"]
         secret = json.loads(secret_string)
-        bingCookie = secret['cookie']
+        bingCookie = secret["cookie"]
         return bingCookie
     else:
         raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
-    
+
 
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
@@ -454,8 +461,10 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
             )  # status code 수정
 
-        response_data = {"result_url": task.get()["result_url"],
-                         "keyword": task.get()["keyword"]}
+        response_data = {
+            "result_url": task.get()["result_url"],
+            "keyword": task.get()["keyword"],
+        }
 
         return Response(response_data, status=status.HTTP_200_OK)
 
