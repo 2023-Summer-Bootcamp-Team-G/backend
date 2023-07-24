@@ -58,16 +58,6 @@ class ImageGenAPI:
 
         if response.status_code != 302:
             # 오류 처리
-<<<<<<< HEAD
-            print(f"Failed to get a valid response. Status Code: {response.status_code}")
-            raise Exception(f"Failed to get a valid response. Status Code: {response.status_code}")
-
-        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
-        redirect_url = response.headers.get("Location")
-        if not redirect_url:
-            raise Exception("'Location' header not found in the response.")
-
-=======
             print(
                 f"Failed to get a valid response. Status Code: {response.status_code}"
             )
@@ -83,7 +73,6 @@ class ImageGenAPI:
         # # Get redirect URL
         # redirect_url = response.headers["Location"].replace("&nfy=1", "")
         # request_id = redirect_url.split("id=")[-1]
->>>>>>> develop
         self.session.get(f"{BING_URL}{redirect_url}")
         polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
 
@@ -112,8 +101,6 @@ class ImageGenAPI:
         normal_image_links = [link.split("?w=")[0] for link in image_links]
 
         return normal_image_links
-<<<<<<< HEAD
-=======
 
 
 if __name__ == "__main__":
@@ -173,4 +160,3 @@ if __name__ == "__main__":
     # (response.content) 추후 저장
 
     # 웹 쿠키 얻기 cookieStore.get("_U").then(result => console.log(result.value))
->>>>>>> develop
