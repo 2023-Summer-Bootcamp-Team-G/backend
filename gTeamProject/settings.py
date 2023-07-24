@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # "django_celery_results",
     "django_redis",
-    "django_prometheus",
+    # "django_prometheus",
 ]
 
 # Gunicorn 설정
@@ -54,7 +54,7 @@ WSGI_APPLICATION = "gTeamProject.wsgi.application"
 # NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    # "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -63,7 +63,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
+    # "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "gTeamProject.urls"
