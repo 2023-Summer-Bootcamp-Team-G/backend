@@ -1,6 +1,6 @@
 from pathlib import Path
-from aws import AWSManager
-import json
+
+from common.aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,37 +27,6 @@ SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 
-
-def get_s3Key():
-    secret_name = "s3"
-    region_name = "ap-northeast-2"
-    client = AWSManager._session.client(
-        service_name="secretsmanager", region_name=region_name
-    )
-
-    try:
-        response = client.get_secret_value(SecretId=secret_name)
-    except Exception as e:
-        raise Exception("S3 키를 가져오는 데 실패했습니다.") from e
-
-    if "SecretString" in response:
-        secret_string = response["SecretString"]
-        secret = json.loads(secret_string)
-        access_key = secret["access_key"]
-        secret_key = secret["secret_key"]
-        return access_key, secret_key
-    else:
-        raise Exception("S3 키를 찾을 수 없습니다.")
-
-
-# 세션 관리를 위한 쿠키 설정
-SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
-SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
-SESSION_COOKIE_SAMESITE = "none"  # SameSite 설정
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
-
-# Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -65,12 +34,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "accounts",
+    "drf_yasg",
     "rest_framework",
+    "accounts",
     "question",
     "character",
-    "drf_yasg",
     "corsheaders",
+    # "django_celery_results",
     "django_redis",
     "django_prometheus",
 ]
@@ -82,9 +52,6 @@ WSGI_APPLICATION = "gTeamProject.wsgi.application"
 # Gunicorn이 사용할 워커 프로세스 수 설정
 # 예시: 워커 프로세스를 4개로 설정
 # NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌
-# Gunicorn 실행 명령어
-# CMD = "gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000"
-
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -117,9 +84,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "gTeamProject.wsgi.application"
-
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -138,7 +102,6 @@ DATABASES = {
         },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -162,13 +125,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -183,7 +142,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
 
-# CELERY SETTINGS
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_BROKER_URL = "amqp://rabbitmq:5672"
 CELERY_RESULT_BACKEND = "redis://redis:6379"

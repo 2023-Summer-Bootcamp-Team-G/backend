@@ -10,8 +10,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # Python 로그가 버퍼링 없이 출력
 ENV PYTHONUNBUFFERED 1
 
-ARG REGION_NAME=ap-northeast-2
-ENV REGION_NAME=${REGION_NAME}
+# ARG REGION_NAME=ap-northeast-2
+# ENV REGION_NAME=${REGION_NAME}
 
 # 프로젝트의 작업 폴더 지정
 WORKDIR /usr/src/app
@@ -28,25 +28,12 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-RUN apt-get update \
-    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
+    python -m pip install celery redis
 
-COPY . .
-
-RUN test -d static || mkdir static
+COPY celery.py tasks.py ./celery_worker/
 
 USER appuser
 
-EXPOSE 8000
+CMD sh -c "celery -A celery_worker worker --loglevel=info"
 
-CMD python manage.py collectstatic --noinput \
-    && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload

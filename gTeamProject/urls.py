@@ -17,7 +17,7 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.conf import settings
-from django.urls import path, include, re_path
+from django.urls import path, include
 from accounts.views import RegisterView, LoginView, LogoutView
 from character.views import nlpAPI, Characters
 from rest_framework import permissions
@@ -49,20 +49,18 @@ urlpatterns = [
     path("", include("django_prometheus.urls")),
 ]
 
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
-    re_path(
-        r"^swagger(?P<format>\.json|\.yaml)$",
-        schema_view.without_ui(cache_timeout=0),
-        name="schema-json",
+    path(
+        "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
     ),
-    re_path(
-        r"^swagger/$",
+    path(
+        "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    re_path(
-        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
-    ),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

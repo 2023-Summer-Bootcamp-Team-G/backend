@@ -9,7 +9,6 @@
 **/.venv
 **/.classpath
 **/.dockerignore
-# **/.env
 **/.git
 **/.gitignore
 **/.project
@@ -33,4 +32,5 @@
 LICENSE
 README.md
 
+# **/.env
 static/

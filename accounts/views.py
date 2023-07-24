@@ -1,10 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, login
-from django.contrib.sessions.backends.db import SessionStore
-from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth import get_user_model, authenticate
+
+# from django.contrib.sessions.backends.db import SessionStore
+# from django.views.decorators.csrf import csrf_protect
 
 # authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
 # 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
