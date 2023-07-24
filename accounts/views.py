@@ -90,7 +90,7 @@ class LoginView(APIView):
             "sessionid",
             request.session.session_key,
             httponly=True,
-            secure=True,
+            # secure=True,
             samesite="Lax",
         )
 

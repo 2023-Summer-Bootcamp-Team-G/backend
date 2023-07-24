@@ -1,7 +1,6 @@
 version: '3.7'
 
 services:
-
   setup:
     profiles:
       - setup
@@ -104,3 +103,6 @@ networks:
 
 volumes:
   elasticsearch:
+  rabbit:
+  celery_worker:
+  redis:

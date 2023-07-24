@@ -19,11 +19,11 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include, re_path
 from accounts.views import RegisterView, LoginView, LogoutView
-from character.views import nlpAPI
+from character.views import nlpAPI, Characters
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from question.views import get_user_data
+from question.views import get_user_data, Questions
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,13 +37,15 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/question/", include("question.urls")),
+    path("api/user-data", get_user_data),
+    path("api/questions", Questions.as_view()),
+    path("api/characters", Characters.as_view()),
     path("api/characters/", include("character.urls")),
-    path("api/register/", RegisterView.as_view(), name="register"),
-    path("api/login/", LoginView.as_view(), name="login"),
-    path("api/logout/", LogoutView.as_view(), name="logout"),
-    path("api/extract-phrases/", nlpAPI.as_view(), name="extract-phrases"),
-    path("api/user-data/", get_user_data),
+    path("api/register", RegisterView.as_view(), name="register"),
+    path("api/login", LoginView.as_view(), name="login"),
+    path("api/logout", LogoutView.as_view(), name="logout"),
+    path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+    path("api/user-data", get_user_data),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

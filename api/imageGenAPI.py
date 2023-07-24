@@ -58,6 +58,7 @@ class ImageGenAPI:
 
         if response.status_code != 302:
             # 오류 처리
+<<<<<<< HEAD
             print(f"Failed to get a valid response. Status Code: {response.status_code}")
             raise Exception(f"Failed to get a valid response. Status Code: {response.status_code}")
 
@@ -66,6 +67,23 @@ class ImageGenAPI:
         if not redirect_url:
             raise Exception("'Location' header not found in the response.")
 
+=======
+            print(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+            raise Exception(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+
+        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
+        redirect_url = response.headers.get("Location")
+        if not redirect_url:
+            raise Exception("'Location' header not found in the response.")
+
+        # # Get redirect URL
+        # redirect_url = response.headers["Location"].replace("&nfy=1", "")
+        # request_id = redirect_url.split("id=")[-1]
+>>>>>>> develop
         self.session.get(f"{BING_URL}{redirect_url}")
         polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
 
@@ -94,3 +112,65 @@ class ImageGenAPI:
         normal_image_links = [link.split("?w=")[0] for link in image_links]
 
         return normal_image_links
+<<<<<<< HEAD
+=======
+
+
+if __name__ == "__main__":
+    prompt = "a 4d shaped hamburger, digital art"
+    # prompt = "여우 분홍색 지브리 개 기타 도서관"
+
+    image_generator = ImageGenAPI(
+        os.getenv("BING_SESSION_ID")
+    )  # .env 에 추가, BING_SESSION_ID=ID
+
+    iL = image_generator.get_images(prompt)
+
+    print(iL)
+
+    """
+    참고 코드 시작
+    """
+    # from aws import AWSManager
+    # from datetime import timedelta, datetime
+
+    # AWSManager.get_comprehend_client()  # 참고로 이것도 만들어 놨어
+    # s3_client = AWSManager.get_s3_client()
+    # bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
+    # expires_in = int(timedelta(days=1).total_seconds())  # URL의 만료 시간 (초 단위)
+
+    # s3_client.put_object(Bucket=bucket_name, Key=uuid, Body=decoded_data)
+
+    # url, expiration_time = generate_presigned_url(uuid)
+
+    # def generate_presigned_url(object_name):
+    # try:
+    #     expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
+
+    #     # Pre-signed URL 생성
+    #     response = s3_client.generate_presigned_url(
+    #         "get_object",
+    #         Params={
+    #             "Bucket": bucket_name,
+    #             "Key": object_name,
+    #             "ResponseContentType": "image/png",
+    #         },
+    #         ExpiresIn=expires_in,
+    #     )
+
+    #     return response, expiration_time
+    # except ClientError as e:
+    #     print(f"Error generating presigned URL: {e}")
+    #     return None, None
+
+    # # # 파일 삭제
+    # # s3_client.delete_object(Bucket=bucket_name, Key=key)
+
+    """
+    참고 코드 끝
+    """
+
+    # (response.content) 추후 저장
+
+    # 웹 쿠키 얻기 cookieStore.get("_U").then(result => console.log(result.value))
+>>>>>>> develop
