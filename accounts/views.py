@@ -1,12 +1,14 @@
 from rest_framework.views import APIView
+from django.views import View
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.shortcuts import redirect
 from django.contrib.sessions.backends.db import SessionStore
-from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth import get_user_model, authenticate
+from django.http import JsonResponse
+import requests
 
 # from django.contrib.sessions.backends.db import SessionStore
 # from django.views.decorators.csrf import csrf_protect
@@ -101,14 +103,6 @@ class LoginView(APIView):
         return response
 
 
-class KakaoView(APIView):
-    def get(self, request):
-        kakao_api = "https://kauth.kakao.com/oauth/authorize?response_type=code"
-        redirect_uri = "http://127.0.0.1:8000/"
-        client_id = "c0a747f67ed13f79de992cbcdedec359"
-        return redirect(f"{kakao_api}&client_id={client_id}&redirect_uri={redirect_uri}")
-
-
 class LogoutView(APIView):
     def post(self, request):
         # 세션 삭제
@@ -118,3 +112,44 @@ class LogoutView(APIView):
         request.session["nick_name"] = None
 
         return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
+
+
+class KakaoSignInView(View):
+    def get(self, request):
+        kakao_api = "https://kauth.kakao.com/oauth/authorize?response_type=code"
+        redirect_uri = "http://127.0.0.1:8000/sign-in/kakao/callback/"
+        client_id = "c0a747f67ed13f79de992cbcdedec359"
+
+        return redirect(f"{kakao_api}&client_id={client_id}&redirect_uri={redirect_uri}")
+
+
+class KakaoSignInCallbackView(View):
+    def get(self, request):
+        try:
+            # Get the authorization code from the request parameters
+            code = request.GET.get("code")
+            client_id = "c0a747f67ed13f79de992cbcdedec359"
+            redirect_uri = "http://127.0.0.1:8000/sign-in/kakao/callback/"
+
+            # Use the authorization code to request access token from Kakao
+            token_request = requests.get(
+                f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+            )
+            token_json = token_request.json()
+            print(token_json)
+
+            error = token_json.get("error", None)
+
+            if error is not None:
+                return JsonResponse({"message": "INVALID_CODE"}, status=400)
+
+            access_token = token_json.get("access_token")
+
+            # Return the access token in the response
+            return JsonResponse({'access_token': access_token}, status=200)
+
+        except KeyError:
+            return JsonResponse({"message": "INVALID_TOKEN"}, status=400)
+
+        except access_token.DoesNotExist:
+            return JsonResponse({"message": "INVALID_TOKEN"}, status=400)
