@@ -27,6 +27,7 @@ SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
 
+
 def get_s3Key():
     secret_name = "s3"
     region_name = "ap-northeast-2"
@@ -68,7 +69,7 @@ INSTALLED_APPS = [
     "character",
     "drf_yasg",
     "corsheaders",
-    "django_celery_results",
+    # "django_celery_results",
     "django_redis",
 ]
 
