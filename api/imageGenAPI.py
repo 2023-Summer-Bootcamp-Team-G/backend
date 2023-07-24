@@ -3,7 +3,6 @@ import re
 import time
 import random
 import requests
-
 from enum import Enum
 
 BING_URL = "https://www.bing.com"
@@ -30,10 +29,7 @@ class Error(Enum):
 
 
 class ImageGenAPI:
-    def __init__(
-        self,
-        auth_cookie: str,
-    ):
+    def __init__(self, auth_cookie: str):
         self.session: requests.Session = requests.Session()
         self.session.headers = HEADERS
         self.session.cookies.set("_U", auth_cookie)
@@ -75,6 +71,18 @@ class ImageGenAPI:
         if not redirect_url:
             raise Exception("'Location' header not found in the response.")
 
+            print(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+            raise Exception(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+
+        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
+        redirect_url = response.headers.get("Location")
+        if not redirect_url:
+            raise Exception("'Location' header not found in the response.")
+
         # # Get redirect URL
         # redirect_url = response.headers["Location"].replace("&nfy=1", "")
         # request_id = redirect_url.split("id=")[-1]
@@ -100,6 +108,7 @@ class ImageGenAPI:
         image_links = re.findall(r'src="([^"]+)"', response.text)
 
         if len(image_links) == 0:
+            print("No images found.")
             raise Exception(Error.ERROR_NO_IMAGES.value)
 
         normal_image_links = [link.split("?w=")[0] for link in image_links]

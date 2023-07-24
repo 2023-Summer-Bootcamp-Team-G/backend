@@ -47,22 +47,21 @@ urlpatterns = [
     path("api/kakaologin", KakaoView.as_view(), name="kakaologin"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
     path("api/user-data", get_user_data),
+    # path("", include("django_prometheus.urls")),
 ]
 
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
-    re_path(
-        r"^swagger(?P<format>\.json|\.yaml)$",
-        schema_view.without_ui(cache_timeout=0),
-        name="schema-json",
+    path(
+        "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
     ),
-    re_path(
-        r"^swagger/$",
+    path(
+        "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    re_path(
-        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
-    ),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

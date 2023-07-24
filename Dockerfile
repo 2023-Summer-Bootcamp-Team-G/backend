@@ -42,11 +42,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY . .
 
-RUN mkdir static
-RUN python manage.py collectstatic
+RUN test -d static || mkdir static && chown -R appuser:appuser .
 
 USER appuser
 
 EXPOSE 8000
 
-CMD gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload
+CMD python manage.py collectstatic --noinput \
+    && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload

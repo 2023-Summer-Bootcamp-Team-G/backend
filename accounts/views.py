@@ -6,6 +6,10 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import redirect
 from django.contrib.sessions.backends.db import SessionStore
 from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth import get_user_model, authenticate
+
+# from django.contrib.sessions.backends.db import SessionStore
+# from django.views.decorators.csrf import csrf_protect
 
 # authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
 # 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
@@ -94,6 +98,7 @@ class LoginView(APIView):
             # secure=True,
             samesite="Lax",
         )
+        return response
 
 
 class KakaoView(APIView):
@@ -101,8 +106,7 @@ class KakaoView(APIView):
         kakao_api = "https://kauth.kakao.com/oauth/authorize?response_type=code"
         redirect_uri = "http://127.0.0.1:8000/"
         client_id = "c0a747f67ed13f79de992cbcdedec359"
-
-        return redirect(f"{kakao_api}&client_id={client_id}&redircet_uri={redirect_uri}")
+        return redirect(f"{kakao_api}&client_id={client_id}&redirect_uri={redirect_uri}")
 
 
 class LogoutView(APIView):
