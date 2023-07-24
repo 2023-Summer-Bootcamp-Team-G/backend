@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from aws import AWSManager
+from common.aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,11 +34,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "accounts",
+    "drf_yasg",
     "rest_framework",
+    "accounts",
     "question",
     "character",
-    "drf_yasg",
     "corsheaders",
     # "django_celery_results",
     "django_redis",
@@ -122,11 +122,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -142,8 +139,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
 
-# CELERY SETTINGS
-# CELERY_TIMEZONE = "Asia/Seoul"
+CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_BROKER_URL = "amqp://rabbitmq:5672"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 CELERY_ACCEPT_CONTENT = ["json"]

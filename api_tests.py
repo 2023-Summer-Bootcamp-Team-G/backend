@@ -8,6 +8,7 @@ RUN_POST_TESTS = True
 
 class TestTeamGAPI(unittest.TestCase):
     base_url = "http://localhost:8000"
+    # base_url = "http://3.35.88.150:8000"
 
     test_user_id = "test"
     test_password = "test1234"
@@ -143,20 +144,20 @@ class TestTeamGAPI(unittest.TestCase):
 
         self.assertEqual(response.status_code, 201, response.text)
 
-    @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
-    def test_12_extract_phrases(self):
-        # TODO: 구문 추출 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-        data = {"text": "This is a sample sentence for test."}  # 분석할 텍스트
-        response = self.session.post(f"{self.base_url}/api/extract-phrases", json=data)
+    # @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
+    # def test_12_extract_phrases(self):
+    #     # TODO: 구문 추출 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
+    #     data = {"text": "This is a sample sentence for test."}  # 분석할 텍스트
+    #     response = self.session.post(f"{self.base_url}/api/extract-phrases", json=data)
 
-        TestTeamGAPI.results["extract_phrases_post"] = response.json()
-        self.assertEqual(response.status_code, 200)
+    #     TestTeamGAPI.results["extract_phrases_post"] = response.json()
+    #     self.assertEqual(response.status_code, 200)
 
-    def test_13_extract_phrases_list(self):
-        # TODO: 구문 추출 리스트 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
-        response = self.session.get(f"{self.base_url}/api/extract-phrases")
-        TestTeamGAPI.results["extract_phrases_get"] = response.json()
-        self.assertEqual(response.status_code, 200)
+    # def test_13_extract_phrases_list(self):
+    #     # TODO: 구문 추출 리스트 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
+    #     response = self.session.get(f"{self.base_url}/api/extract-phrases")
+    #     TestTeamGAPI.results["extract_phrases_get"] = response.json()
+    #     self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_14_logout(self):

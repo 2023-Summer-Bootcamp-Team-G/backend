@@ -28,22 +28,12 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-RUN apt-get update \
-    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     python -m pip install celery
+    python -m pip install celery redis
 
-COPY . .
+COPY celery.py tasks.py ./celery_worker/
 
 USER appuser
 
-CMD sh -c "celery -A celery worker --loglevel=info"
+CMD sh -c "celery -A celery_worker worker --loglevel=info"
+

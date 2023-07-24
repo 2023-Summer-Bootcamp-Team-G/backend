@@ -1,4 +1,3 @@
-import json
 import time
 import random
 from api.imageGenAPI import ImageGenAPI
@@ -7,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 
-from aws import AWSManager
+from common.aws import AWSManager
 from .models import Submit, Answer
 from question.models import Question, Poll
 import logging
@@ -34,7 +33,8 @@ from .swagger_serializer import (
     PostFinalSubmitRequestSerializer,
     PostFinalSubmitResponseSerializer,
 )
-from celery_test.task import create_character
+
+from celery_worker.tasks import create_character
 from celery.result import AsyncResult
 from api.api import upload_img_to_s3
 
@@ -128,7 +128,7 @@ class nlpAPI(APIView):
 
 
 def get_user_data(request):
-    session_id = request.session.session_key
+    # session_id = request.session.session_key
     user_id = request.session.get("user_id")
     nick_name = request.session.get("nick_name")
 

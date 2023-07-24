@@ -17,15 +17,14 @@ services:
 
   celery:
     container_name: celery_worker
-    build: ./celery_test
-    command: sh -c "celery -A celery_test worker --loglevel=info"
+    build: ./celery_worker
     depends_on:
       - rabbit
       - redis
     networks:
       - mynetwork
     volumes:
-      - ./:/usr/src/app
+      - ./celery_worker:/usr/src/app/celery_worker
 
   rabbit:
     container_name: rabbitmq
