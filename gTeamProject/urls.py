@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
     path("api/user-data", get_user_data),
+    path("", include("django_prometheus.urls")),
 ]
 
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
