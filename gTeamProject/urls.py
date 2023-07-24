@@ -23,7 +23,7 @@ from character.views import nlpAPI, Characters
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from question.views import get_user_data, Questions
+from question.views import get_user_data, Questions, get_whoUser_data
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,7 +37,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/user-data", get_user_data),
+    path("api/user-data", get_user_data, name="get_user_data"),
+    path("api/whouser-data", get_whoUser_data, name="get_whoUser_data"),
     path("api/questions", Questions.as_view()),
     path("api/characters", Characters.as_view()),
     path("api/characters/", include("character.urls")),
@@ -45,7 +46,6 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
-    path("api/user-data", get_user_data),
     path("", include("django_prometheus.urls")),
 ]
 
