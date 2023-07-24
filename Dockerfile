@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY . .
 
-RUN test -d static || mkdir static
+RUN test -d static || mkdir static && chown -R appuser:appuser .
 
 USER appuser
 
