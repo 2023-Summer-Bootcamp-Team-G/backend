@@ -259,6 +259,9 @@ class Characters(APIView):
     )
     def post(self, request):
         login = get_user_data(request)
+
+        print("login?", login)
+
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
