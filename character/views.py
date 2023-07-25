@@ -395,25 +395,31 @@ class DuplicateCharacter(APIView):
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
         question_id_serializer = QuestionIdSerializer(question, many=True)
+        
+        answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
         # 중복 캐릭터에 대한 답변 저장
         for i in range(len(prompt)):
             keyword = prompt[i]
-
-            question_id = question_id_serializer.data[i]["id"]
-            data = {
-                "question_id": question_id,
-                "submit_id": submit_id,
-                "num": i + 1,
-                "content": None,
-                "keyword": keyword,
-            }
-            answer_serializer = AnswerPostSerializer(data=data)
-            if answer_serializer.is_valid():
-                answer_serializer.save()
+            if answer_list:  # 캐릭터에 대한 답변 업데이트
+                answer_list[i].content = None
+                answer_list[i].keyword = keyword
+                answer_list[i].save()
             else:
-                return Response(
-                    answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                question_id = question_id_serializer.data[i]["id"]
+                data = {
+                    "question_id": question_id,
+                    "submit_id": submit_id,
+                    "num": i + 1,
+                    "content": None,
+                    "keyword": keyword,
+                }
+                answer_serializer = AnswerPostSerializer(data=data)
+                if answer_serializer.is_valid():
+                    answer_serializer.save()
+                else:
+                    return Response(
+                        answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)

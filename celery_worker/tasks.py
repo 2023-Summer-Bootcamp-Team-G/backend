@@ -1,6 +1,14 @@
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gTeamProject.settings")
+
+import django
+django.setup()
+
 from celery import shared_task
 from api.imageGenAPI import ImageGenAPI
+from api.api import upload_img_to_s3
 from common.aws import AWSManager
+from character.models import Submit
 
 # from rest_framework.response import Response
 
@@ -37,4 +45,11 @@ def create_character(submit_id, prompt, duplicate=False):
     result_url = create_image(prompt)
     if duplicate:
         result_url = result_url[0]
+        
+        final_url = upload_img_to_s3(result_url)
+        
+        submit = Submit.objects.get(id=submit_id)
+        submit.result_url = final_url
+        submit.save()
+
     return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
