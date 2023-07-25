@@ -32,10 +32,7 @@ class PostCharacterRequestSerializer(serializers.Serializer):
 
 
 class PostCharacterResponseSerializer(serializers.Serializer):
-    result_url = serializers.CharField()
-    nikc_name = serializers.CharField()
-    character_id = serializers.IntegerField()
-    keyword = serializers.ListField(child=serializers.CharField())
+    task_id = serializers.CharField()
 
 
 class KeywordCountSerializer(serializers.Serializer):

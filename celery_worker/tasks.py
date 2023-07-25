@@ -32,7 +32,9 @@ def create_image(prompt):
 
 
 @shared_task
-def create_character(submit_id, prompt):
+def create_character(submit_id, prompt, duplicate=False):
     prompt = ", ".join(prompt)
     result_url = create_image(prompt)
+    if duplicate:
+        result_url = result_url[0]
     return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}

@@ -390,9 +390,7 @@ class DuplicateCharacter(APIView):
         submit_data = create_submit(poll_id, None, prompt, login)
         submit_id = submit_data["character_id"]
 
-        task = create_character.delay(submit_id, prompt)
-        result_url = task.get()["result_url"]
-        submit_data["result_url"] = result_url
+        task = create_character.delay(submit_id, prompt, True)
 
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
@@ -419,7 +417,7 @@ class DuplicateCharacter(APIView):
                 )
 
         return Response(
-            {"duplicate_character": submit_data}, status=status.HTTP_201_CREATED
+            {"task_id": task.id}, status=status.HTTP_201_CREATED
         )
 
 
