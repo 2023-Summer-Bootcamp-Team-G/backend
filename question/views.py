@@ -17,8 +17,6 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
-from django.http import JsonResponse
-from django.contrib.auth import authenticate
 
 
 def create_poll(user_id):
@@ -87,7 +85,7 @@ class Questions(APIView):
         responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
-        login = get_user_data(request)
+        # login = get_user_data(request)
         # if not login:
         #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
 

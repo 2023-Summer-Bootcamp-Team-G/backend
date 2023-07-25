@@ -1,6 +1,5 @@
 from celery import Celery
 
-
 app = Celery(include=["celery_worker.tasks"])
 
 app.conf.update(

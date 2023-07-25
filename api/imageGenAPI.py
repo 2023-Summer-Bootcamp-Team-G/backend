@@ -1,7 +1,8 @@
-import requests
+import os
 import re
 import time
 import random
+import requests
 from enum import Enum
 
 BING_URL = "https://www.bing.com"
@@ -58,8 +59,12 @@ class ImageGenAPI:
 
         if response.status_code != 302:
             # 오류 처리
-            print(f"Failed to get a valid response. Status Code: {response.status_code}")
-            raise Exception(f"Failed to get a valid response. Status Code: {response.status_code}")
+            print(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
+            raise Exception(
+                f"Failed to get a valid response. Status Code: {response.status_code}"
+            )
 
         # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
         redirect_url = response.headers.get("Location")
