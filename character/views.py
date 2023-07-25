@@ -34,7 +34,7 @@ from .swagger_serializer import (
     PostFinalSubmitResponseSerializer,
 )
 
-from common.tasks import create_character
+from celery_worker.tasks import create_character
 from celery.result import AsyncResult
 from api.api import upload_img_to_s3
 

@@ -17,8 +17,6 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
-from django.http import JsonResponse
-from django.contrib.auth import authenticate
 
 
 def create_poll(user_id):

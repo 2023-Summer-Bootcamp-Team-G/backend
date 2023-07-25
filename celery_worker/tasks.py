@@ -1,6 +1,6 @@
-from api import upload_img_to_s3
-
 from .celery import app
+
+from api.api import upload_img_to_s3
 
 
 def create_image(prompt):
@@ -16,6 +16,6 @@ def create_image(prompt):
 def create_character(submit_id, prompt):
     result_url = create_image(prompt)
 
-    upload_img_to_s3("")
+    upload_img_to_s3("")  # for import test
 
     return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
