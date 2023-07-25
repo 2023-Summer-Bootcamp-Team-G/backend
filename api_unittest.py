@@ -8,7 +8,6 @@ RUN_POST_TESTS = True
 
 class TestTeamGAPI(unittest.TestCase):
     base_url = "http://localhost:8000"
-    # base_url = "http://3.35.88.150:8000"
 
     test_user_id = "test"
     test_password = "test1234"
