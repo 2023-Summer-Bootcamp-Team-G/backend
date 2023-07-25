@@ -34,9 +34,11 @@ from .swagger_serializer import (
     PostFinalSubmitResponseSerializer,
 )
 
-from celery_worker.tasks import create_character
+from common.tasks import create_character
 from celery.result import AsyncResult
 from api.api import upload_img_to_s3
+
+from common.auth import get_user_data
 
 fixed_question_num = 2
 
@@ -125,29 +127,6 @@ class nlpAPI(APIView):
                 "processing_time": processing_time,
             }
         )
-
-
-def get_user_data(request):
-    # session_id = request.session.session_key
-    user_id = request.session.get("user_id")
-    nick_name = request.session.get("nick_name")
-
-    if user_id and nick_name:
-        return True
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": user_id,
-        #     "nick_name": nick_name,
-        # }
-    else:
-        return False
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": None,
-        #     "nick_name": None,
-        # }
-
-    # return JsonResponse(user_data)
 
 
 def extract_keyword(answer):

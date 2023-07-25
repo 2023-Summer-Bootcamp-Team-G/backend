@@ -17,14 +17,14 @@ services:
 
   celery:
     container_name: celery_worker
-    build: ./celery_worker
+    build: ./common
     depends_on:
       - rabbit
       - redis
     networks:
       - mynetwork
     volumes:
-      - ./celery_worker:/usr/src/app/celery_worker
+      - ./common:/usr/src/app/common
 
   rabbit:
     container_name: rabbitmq

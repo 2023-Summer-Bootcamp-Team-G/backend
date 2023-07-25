@@ -89,6 +89,7 @@ class LoginView(APIView):
         response.set_cookie(
             "sessionid",
             request.session.session_key,
+            # domain="localhost",
             httponly=True,
             # secure=True,
             samesite="Lax",

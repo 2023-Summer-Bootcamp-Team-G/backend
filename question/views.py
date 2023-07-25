@@ -87,7 +87,7 @@ class Questions(APIView):
         responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
-        login = get_user_data(request)
+        # login = get_user_data(request)
         # if not login:
         #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
 

@@ -1,6 +1,6 @@
-from api import upload_img_to_s3
-
 from .celery import app
+
+from common.api.api import upload_img_to_s3
 
 
 def create_image(prompt):
