@@ -1,21 +1,38 @@
-from .celery import app
+from celery import shared_task
+from api.imageGenAPI import ImageGenAPI
+from common.aws import AWSManager
 
-from api.api import upload_img_to_s3
+# from rest_framework.response import Response
+
+
+def get_ImageCreator_Cookie():
+    try:
+        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
+
+        return bingCookie
+    except Exception as e:
+        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
 def create_image(prompt):
-    return [
-        "https://th.bing.com/th/id/OIG.ctiYxxryky6aReKI63sl?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.vgrm.XjIyXYT_Xkk2jEM?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.M9rr.HWOki6gF4v92ULt?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.L6mTN8sQmnHQHHvUbWOZ?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-    ]
+    image_links = None
+    # try:
+    # 이미지 생성 및 저장
+    auth_cookie = get_ImageCreator_Cookie()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+    image_generator = ImageGenAPI(auth_cookie)
+    image_links = image_generator.get_images(prompt)
+
+    # except Exception as e:
+    #     print(f"Error: {str(e)}")
+    # # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+    # return Response({"error": str(e)})
+
+    # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+    return image_links
 
 
-@app.task
+@shared_task
 def create_character(submit_id, prompt):
+    prompt = ", ".join(prompt)
     result_url = create_image(prompt)
-
-    upload_img_to_s3("")  # for import test
-
     return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}

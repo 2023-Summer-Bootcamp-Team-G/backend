@@ -214,7 +214,7 @@ class Characters(APIView):
                 for answer in answer_serializer.data:
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
-                        keyword.append(answer["content"])
+                        keyword.append(answer["keyword"])
                     else:
                         break
                 # response data에 키워드 추가
@@ -240,7 +240,7 @@ class Characters(APIView):
         login = get_user_data(request)
 
         print("login?", login)
-
+        # login = True
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
@@ -250,9 +250,9 @@ class Characters(APIView):
         # 답변 추출
         for i in range(len(answers)):
             if i < fixed_question_num:
-                keyword = extract_keyword(answers[i])
+                keyword = extract_key_phrases(answers[i])
                 # 추출된 키워드 배열
-                prompt.append(keyword)
+                prompt.extend(keyword)
             else:
                 break
         # 캐릭터 생성
@@ -271,22 +271,25 @@ class Characters(APIView):
 
         # 답변 저장
         for i in range(len(answers)):
+            content = answers[i]
             if i < fixed_question_num:
                 keyword = prompt[i]
             else:
-                keyword = answers[i]
+                keyword = None
 
             question_id = question_id_serializer.data[i]["id"]
 
             if answer_list:  # 캐릭터에 대한 답변 업데이트
-                answer_list[i].content = keyword
+                answer_list[i].content = content
+                answer_list[i].keyword = keyword
                 answer_list[i].save()
             else:  # 캐릭터에 대한 답변 생성
                 data = {
                     "question_id": question_id,
                     "submit_id": submit_id,
                     "num": i + 1,
-                    "content": keyword,
+                    "content": content,
+                    "keyword": keyword,
                 }
                 answer_serializer = AnswerPostSerializer(data=data)
                 if answer_serializer.is_valid():
@@ -315,13 +318,25 @@ class CharacterDetail(APIView):
         answer = Answer.objects.filter(submit_id=character_id)
         answer_data = AnswerSerializer(answer, many=True)
 
+        answers = []
+        keyword = []
+        for data in answer_data.data:
+            answers.append(data["content"])
+            if data["keyword"] is not None:
+                keyword.append(data["keyword"])
+
         # 캐릭터 질문 정보 가져오기
         question = Question.objects.filter(poll_id=submit.poll_id)
         question_data = QuestionTextSerializer(question, many=True)
 
+        questions = []
+        for data in question_data.data:
+            questions.append(data["question_text"])
+
         response_data = dict(submit_data.data)
-        response_data["questions"] = question_data.data
-        response_data["answers"] = answer_data.data
+        response_data["questions"] = questions
+        response_data["answers"] = answers
+        response_data["keyword"] = keyword
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -336,10 +351,10 @@ def count_keyword(poll_id):
         answers = Answer.objects.filter(submit_id=submit_id)
         for i, answer in enumerate(answers, start=1):
             if i <= fixed_question_num:
-                if answer.content in keyword_count[i]:
-                    keyword_count[i][answer.content] += 1
+                if answer.keyword in keyword_count[i]:
+                    keyword_count[i][answer.keyword] += 1
                 else:
-                    keyword_count[i][answer.content] = 1
+                    keyword_count[i][answer.keyword] = 1
 
     return keyword_count
 
@@ -376,6 +391,8 @@ class DuplicateCharacter(APIView):
         submit_id = submit_data["character_id"]
 
         task = create_character.delay(submit_id, prompt)
+        result_url = task.get()["result_url"]
+        submit_data["result_url"] = result_url
 
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
@@ -390,7 +407,8 @@ class DuplicateCharacter(APIView):
                 "question_id": question_id,
                 "submit_id": submit_id,
                 "num": i + 1,
-                "content": keyword,
+                "content": None,
+                "keyword": keyword,
             }
             answer_serializer = AnswerPostSerializer(data=data)
             if answer_serializer.is_valid():
@@ -400,7 +418,9 @@ class DuplicateCharacter(APIView):
                     answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"duplicate_character": submit_data}, status=status.HTTP_201_CREATED
+        )
 
 
 class KeywordChart(APIView):
@@ -437,23 +457,6 @@ class KeywordChart(APIView):
         return Response(Response_data, status=status.HTTP_200_OK)
 
 
-def get_ImageCreator_Cookie():
-    try:
-        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
-
-        return bingCookie
-    except Exception as e:
-        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
-
-    # if "SecretString" in response:
-    #     secret_string = response["SecretString"]
-    #     secret = json.loads(secret_string)
-    #     bingCookie = secret["cookie"]
-    #     return bingCookie
-    # else:
-    #     raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
-
-
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
     def get(self, request, task_id):
@@ -467,7 +470,7 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
 
         response_data = {
             "result_url": task.get()["result_url"],
-            "keyword": task.get()["keyword"],
+            "keyword": task.get()["keyword"].split(", "),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
