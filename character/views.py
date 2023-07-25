@@ -395,7 +395,7 @@ class DuplicateCharacter(APIView):
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
         question_id_serializer = QuestionIdSerializer(question, many=True)
-        
+
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
         # 중복 캐릭터에 대한 답변 저장
@@ -420,7 +420,7 @@ class DuplicateCharacter(APIView):
                 else:
                     return Response(
                         answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                )
+                    )
 
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
