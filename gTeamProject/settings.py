@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import os
 from common.aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -8,6 +8,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 SECRET_KEY = AWSManager.get_secret("django")["SECRET_KEY"]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 DEBUG = True  # Set False when production!!
@@ -43,6 +45,7 @@ INSTALLED_APPS = [
     # "django_celery_results",
     "django_redis",
     # "django_prometheus",
+    "sslserver",
 ]
 
 # Gunicorn 설정
