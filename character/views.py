@@ -416,9 +416,7 @@ class DuplicateCharacter(APIView):
                     answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return Response(
-            {"task_id": task.id}, status=status.HTTP_201_CREATED
-        )
+        return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
 
 class KeywordChart(APIView):
