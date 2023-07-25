@@ -129,10 +129,10 @@ class nlpAPI(APIView):
         )
 
 
-def extract_keyword(answer):
-    keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
-    num = random.randint(0, 4)
-    return keyword[num]
+# def extract_keyword(answer):
+#     keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
+#     num = random.randint(0, 4)
+#     return keyword[num]
 
 
 def create_submit(poll_id, nick_name, prompt, login):
@@ -385,7 +385,7 @@ class DuplicateCharacter(APIView):
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
-            prompt.append(max_value_keyword)
+            prompt.append(str(max_value_keyword))
 
         submit_data = create_submit(poll_id, None, prompt, login)
         submit_id = submit_data["character_id"]

@@ -16,22 +16,13 @@ class GetCharacterListResponseSerializer(serializers.Serializer):
     characters = CharacterInfoSerializer(many=True)
 
 
-class QuestionInfoSerializer(serializers.Serializer):
-    question_number = serializers.IntegerField()
-    question_text = serializers.CharField()
-
-
-class AnswerInfoSerializer(serializers.Serializer):
-    num = serializers.IntegerField()
-    content = serializers.CharField()
-
-
 class GetCharacterDetailResponseSerializer(serializers.Serializer):
     character_id = serializers.IntegerField()
     result_url = serializers.CharField()
     nick_name = serializers.CharField()
-    questions = QuestionInfoSerializer(many=True)
-    answers = AnswerInfoSerializer(many=True)
+    questions = serializers.ListField(child=serializers.CharField())
+    answers = serializers.ListField(child=serializers.CharField())
+    keyword = serializers.ListField(child=serializers.CharField())
 
 
 class PostCharacterRequestSerializer(serializers.Serializer):
@@ -41,7 +32,10 @@ class PostCharacterRequestSerializer(serializers.Serializer):
 
 
 class PostCharacterResponseSerializer(serializers.Serializer):
-    task_id = serializers.CharField()
+    result_url = serializers.CharField()
+    nikc_name = serializers.CharField()
+    character_id = serializers.IntegerField()
+    keyword = serializers.ListField(child=serializers.CharField())
 
 
 class KeywordCountSerializer(serializers.Serializer):
