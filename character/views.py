@@ -40,7 +40,7 @@ from api.api import upload_img_to_s3
 
 from common.auth import get_user_data
 
-fixed_question_num = 2
+fixed_question_num = 5
 
 # 로거 생성
 logger = logging.getLogger(__name__)
@@ -251,7 +251,9 @@ class Characters(APIView):
         for i in range(len(answers)):
             if i < fixed_question_num:
                 keyword = extract_key_phrases(answers[i])
+                # keyword = []
                 # 추출된 키워드 배열
+                keyword = [""] if len(keyword) == 0 else keyword
                 prompt.extend(keyword)
             else:
                 break

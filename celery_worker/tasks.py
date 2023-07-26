@@ -1,18 +1,8 @@
-import os
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gTeamProject.settings")
-
-import django
-
-django.setup()
-
 from celery import shared_task
 from api.imageGenAPI import ImageGenAPI
 from api.api import upload_img_to_s3
 from common.aws import AWSManager
 from character.models import Submit
-
-# from rest_framework.response import Response
 
 
 def get_ImageCreator_Cookie():
