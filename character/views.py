@@ -40,7 +40,7 @@ from api.api import upload_img_to_s3
 
 from common.auth import get_user_data
 
-fixed_question_num = 2
+fixed_question_num = 5
 
 # 로거 생성
 logger = logging.getLogger(__name__)
@@ -129,10 +129,10 @@ class nlpAPI(APIView):
         )
 
 
-def extract_keyword(answer):
-    keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
-    num = random.randint(0, 4)
-    return keyword[num]
+# def extract_keyword(answer):
+#     keyword = ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
+#     num = random.randint(0, 4)
+#     return keyword[num]
 
 
 def create_submit(poll_id, nick_name, prompt, login):
@@ -214,7 +214,8 @@ class Characters(APIView):
                 for answer in answer_serializer.data:
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
-                        keyword.append(answer["content"])
+                        if answer["keyword"] != "":
+                            keyword.append(answer["keyword"])
                     else:
                         break
                 # response data에 키워드 추가
@@ -240,7 +241,7 @@ class Characters(APIView):
         login = get_user_data(request)
 
         print("login?", login)
-
+        # login = True
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
@@ -250,16 +251,18 @@ class Characters(APIView):
         # 답변 추출
         for i in range(len(answers)):
             if i < fixed_question_num:
-                keyword = extract_keyword(answers[i])
+                keyword = extract_key_phrases(answers[i])
+                # keyword = []
                 # 추출된 키워드 배열
-                prompt.append(keyword)
+                keyword = [""] if len(keyword) == 0 else keyword
+                prompt.extend(keyword)
             else:
                 break
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt, login)
         submit_id = submit_data["character_id"]
 
-        # 이미지 생성 시작
+        # 이미지 생성 시작(여기서 빈 문자열을 굳이 보낼 필요가 있을까)
         task = create_character.delay(submit_id, prompt)
 
         # 질문 고유 번호 불러오기
@@ -271,22 +274,25 @@ class Characters(APIView):
 
         # 답변 저장
         for i in range(len(answers)):
+            content = answers[i]
             if i < fixed_question_num:
                 keyword = prompt[i]
             else:
-                keyword = answers[i]
+                keyword = None
 
             question_id = question_id_serializer.data[i]["id"]
 
             if answer_list:  # 캐릭터에 대한 답변 업데이트
-                answer_list[i].content = keyword
+                answer_list[i].content = content
+                answer_list[i].keyword = keyword
                 answer_list[i].save()
             else:  # 캐릭터에 대한 답변 생성
                 data = {
                     "question_id": question_id,
                     "submit_id": submit_id,
                     "num": i + 1,
-                    "content": keyword,
+                    "content": content,
+                    "keyword": keyword,
                 }
                 answer_serializer = AnswerPostSerializer(data=data)
                 if answer_serializer.is_valid():
@@ -315,13 +321,25 @@ class CharacterDetail(APIView):
         answer = Answer.objects.filter(submit_id=character_id)
         answer_data = AnswerSerializer(answer, many=True)
 
+        answers = []
+        keyword = []
+        for data in answer_data.data:
+            answers.append(data["content"])
+            if data["keyword"] is not None and data["keyword"] != "":
+                keyword.append(data["keyword"])
+
         # 캐릭터 질문 정보 가져오기
         question = Question.objects.filter(poll_id=submit.poll_id)
         question_data = QuestionTextSerializer(question, many=True)
 
+        questions = []
+        for data in question_data.data:
+            questions.append(data["question_text"])
+
         response_data = dict(submit_data.data)
-        response_data["questions"] = question_data.data
-        response_data["answers"] = answer_data.data
+        response_data["questions"] = questions
+        response_data["answers"] = answers
+        response_data["keyword"] = keyword
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -336,10 +354,10 @@ def count_keyword(poll_id):
         answers = Answer.objects.filter(submit_id=submit_id)
         for i, answer in enumerate(answers, start=1):
             if i <= fixed_question_num:
-                if answer.content in keyword_count[i]:
-                    keyword_count[i][answer.content] += 1
+                if answer.keyword in keyword_count[i]:
+                    keyword_count[i][answer.keyword] += 1
                 else:
-                    keyword_count[i][answer.content] = 1
+                    keyword_count[i][answer.keyword] = 1
 
     return keyword_count
 
@@ -370,35 +388,42 @@ class DuplicateCharacter(APIView):
         prompt = []
         for i in range(1, fixed_question_num + 1):
             max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
-            prompt.append(max_value_keyword)
+            prompt.append(str(max_value_keyword))
 
         submit_data = create_submit(poll_id, None, prompt, login)
         submit_id = submit_data["character_id"]
 
-        task = create_character.delay(submit_id, prompt)
+        task = create_character.delay(submit_id, prompt, True)
 
         # 질문 고유 번호 불러오기
         question = Question.objects.filter(poll_id=poll_id)
         question_id_serializer = QuestionIdSerializer(question, many=True)
 
+        answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
+
         # 중복 캐릭터에 대한 답변 저장
         for i in range(len(prompt)):
             keyword = prompt[i]
-
-            question_id = question_id_serializer.data[i]["id"]
-            data = {
-                "question_id": question_id,
-                "submit_id": submit_id,
-                "num": i + 1,
-                "content": keyword,
-            }
-            answer_serializer = AnswerPostSerializer(data=data)
-            if answer_serializer.is_valid():
-                answer_serializer.save()
+            if answer_list:  # 캐릭터에 대한 답변 업데이트
+                answer_list[i].content = None
+                answer_list[i].keyword = keyword
+                answer_list[i].save()
             else:
-                return Response(
-                    answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                )
+                question_id = question_id_serializer.data[i]["id"]
+                data = {
+                    "question_id": question_id,
+                    "submit_id": submit_id,
+                    "num": i + 1,
+                    "content": None,
+                    "keyword": keyword,
+                }
+                answer_serializer = AnswerPostSerializer(data=data)
+                if answer_serializer.is_valid():
+                    answer_serializer.save()
+                else:
+                    return Response(
+                        answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    )
 
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
@@ -424,6 +449,11 @@ class KeywordChart(APIView):
             sorted_keyword_count = dict(
                 sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
             )
+            
+            # 예외 처리 (키가 빈문자열("") 인 경우)
+            if "" in sorted_keyword_count.keys():
+                del sorted_keyword_count[""]
+
             total = sum(sorted_keyword_count.values())
             for key in sorted_keyword_count:
                 sorted_keyword_count[key] = [sorted_keyword_count[key]]
@@ -437,23 +467,6 @@ class KeywordChart(APIView):
         return Response(Response_data, status=status.HTTP_200_OK)
 
 
-def get_ImageCreator_Cookie():
-    try:
-        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
-
-        return bingCookie
-    except Exception as e:
-        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
-
-    # if "SecretString" in response:
-    #     secret_string = response["SecretString"]
-    #     secret = json.loads(secret_string)
-    #     bingCookie = secret["cookie"]
-    #     return bingCookie
-    # else:
-    #     raise Exception("BingImageCreator API 키를 찾을 수 없습니다.")
-
-
 class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
     def get(self, request, task_id):
@@ -465,9 +478,14 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
 
+        keyword = task.get()["keyword"].split(", ")
+        
+        while "" in keyword:
+            keyword.remove("")
+        
         response_data = {
             "result_url": task.get()["result_url"],
-            "keyword": task.get()["keyword"],
+            "keyword": keyword
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
