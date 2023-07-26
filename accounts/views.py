@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, login, logout
 
 # from django.contrib.sessions.backends.db import SessionStore
 # from django.views.decorators.csrf import csrf_protect
@@ -101,9 +101,10 @@ class LoginView(APIView):
 class LogoutView(APIView):
     def post(self, request):
         # 세션 삭제
-        request.session.flush()
-        # 사용자 정보 초기화
-        request.session["user_id"] = None
-        request.session["nick_name"] = None
+        # request.session.flush()
+        # # 사용자 정보 초기화
+        # request.session["user_id"] = None
+        # request.session["nick_name"] = None
+        logout(request)
 
         return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)

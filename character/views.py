@@ -281,7 +281,6 @@ class Characters(APIView):
                 keyword = None
 
             question_id = question_id_serializer.data[i]["id"]
-
             if answer_list:  # 캐릭터에 대한 답변 업데이트
                 answer_list[i].content = content
                 answer_list[i].keyword = keyword
@@ -449,7 +448,7 @@ class KeywordChart(APIView):
             sorted_keyword_count = dict(
                 sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
             )
-            
+
             # 예외 처리 (키가 빈문자열("") 인 경우)
             if "" in sorted_keyword_count.keys():
                 del sorted_keyword_count[""]
@@ -479,14 +478,11 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
             )  # status code 수정
 
         keyword = task.get()["keyword"].split(", ")
-        
+
         while "" in keyword:
             keyword.remove("")
-        
-        response_data = {
-            "result_url": task.get()["result_url"],
-            "keyword": keyword
-        }
+
+        response_data = {"result_url": task.get()["result_url"], "keyword": keyword}
 
         return Response(response_data, status=status.HTTP_200_OK)
 
