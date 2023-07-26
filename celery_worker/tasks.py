@@ -1,4 +1,4 @@
-from celery import shared_task
+from .celery import app
 from api.imageGenAPI import ImageGenAPI
 from api.api import upload_img_to_s3
 from common.aws import AWSManager
@@ -31,7 +31,7 @@ def create_image(prompt):
     return image_links
 
 
-@shared_task
+@app.task
 def create_character(submit_id, prompt, duplicate=False):
     prompt = ", ".join(prompt)
     result_url = create_image(prompt)

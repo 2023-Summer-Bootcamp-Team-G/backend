@@ -214,7 +214,8 @@ class Characters(APIView):
                 for answer in answer_serializer.data:
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
-                        keyword.append(answer["keyword"])
+                        if answer["keyword"] != "":
+                            keyword.append(answer["keyword"])
                     else:
                         break
                 # response data에 키워드 추가
@@ -261,7 +262,7 @@ class Characters(APIView):
         submit_data = create_submit(poll_id, nick_name, prompt, login)
         submit_id = submit_data["character_id"]
 
-        # 이미지 생성 시작
+        # 이미지 생성 시작(여기서 빈 문자열을 굳이 보낼 필요가 있을까)
         task = create_character.delay(submit_id, prompt)
 
         # 질문 고유 번호 불러오기
@@ -324,7 +325,7 @@ class CharacterDetail(APIView):
         keyword = []
         for data in answer_data.data:
             answers.append(data["content"])
-            if data["keyword"] is not None:
+            if data["keyword"] is not None and data["keyword"] != "":
                 keyword.append(data["keyword"])
 
         # 캐릭터 질문 정보 가져오기
@@ -448,6 +449,11 @@ class KeywordChart(APIView):
             sorted_keyword_count = dict(
                 sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
             )
+            
+            # 예외 처리 (키가 빈문자열("") 인 경우)
+            if "" in sorted_keyword_count.keys():
+                del sorted_keyword_count[""]
+
             total = sum(sorted_keyword_count.values())
             for key in sorted_keyword_count:
                 sorted_keyword_count[key] = [sorted_keyword_count[key]]
@@ -472,9 +478,14 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
 
+        keyword = task.get()["keyword"].split(", ")
+        
+        while "" in keyword:
+            keyword.remove("")
+        
         response_data = {
             "result_url": task.get()["result_url"],
-            "keyword": task.get()["keyword"].split(", "),
+            "keyword": keyword
         }
 
         return Response(response_data, status=status.HTTP_200_OK)

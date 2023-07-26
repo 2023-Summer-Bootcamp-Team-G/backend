@@ -17,3 +17,4 @@ app.conf.update(
         "result_serializer": "json",
     }
 )
+__all__ = ["app"]
