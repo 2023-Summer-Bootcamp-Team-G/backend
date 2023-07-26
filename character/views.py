@@ -386,8 +386,11 @@ class DuplicateCharacter(APIView):
 
         prompt = []
         for i in range(1, fixed_question_num + 1):
-            max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
-            prompt.append(str(max_value_keyword))
+            if keyword_count[i] == {}:
+                prompt.append("")
+            else:
+                max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
+                prompt.append(str(max_value_keyword))
 
         submit_data = create_submit(poll_id, None, prompt, login)
         submit_id = submit_data["character_id"]
@@ -401,7 +404,7 @@ class DuplicateCharacter(APIView):
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
         # 중복 캐릭터에 대한 답변 저장
-        for i in range(len(prompt)):
+        for i in range(len(question_id_serializer.data)):
             keyword = prompt[i]
             if answer_list:  # 캐릭터에 대한 답변 업데이트
                 answer_list[i].content = None
