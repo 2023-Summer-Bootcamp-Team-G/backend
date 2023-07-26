@@ -262,7 +262,7 @@ class Characters(APIView):
                 keyword = extract_key_phrases(answers[i])
                 # keyword = []
                 # 추출된 키워드 배열
-                keyword = ["empty"] if len(keyword) == 0 else keyword
+                keyword = [""] if len(keyword) == 0 else keyword
                 prompt.extend(keyword)
             else:
                 break
@@ -399,7 +399,7 @@ class DuplicateCharacter(APIView):
                 max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
                 prompt.append(str(max_value_keyword))
             else:
-                prompt.append("empty")  # tmp
+                prompt.append("")  # tmp
 
         submit_data = create_submit(
             poll_id, None, prompt, True
