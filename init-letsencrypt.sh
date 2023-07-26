@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
     exit 1
 fi
 
-compose_file="docker-compose.dev.yml"
+compose_file="compose.dev.yml"
 domains=(1tsme.site)
 rsa_key_size=4096
 data_path="./certbot"

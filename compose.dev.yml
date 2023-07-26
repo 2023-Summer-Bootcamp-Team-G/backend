@@ -14,9 +14,11 @@ services:
        - ./certbot/conf:/etc/letsencrypt
        - ./certbot/www:/var/www/certbot
     depends_on:
-      - webapp
+      - web_app
     networks:
       - mynetwork
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
 
   certbot: #certbot 컨테이너 추가
     image: certbot/certbot
@@ -29,8 +31,8 @@ services:
       - nginx
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
-  webapp:
-    container_name: webapp
+  web_app:
+    container_name: web_app
     build: .
     ports:
       - "8000:8000"
@@ -40,8 +42,6 @@ services:
       - redis
     networks:
       - mynetwork  # 추가: mynetwork 네트워크에 속함
-    volumes:
-      - ./:/usr/src/app
 
   celery:
     container_name: celery_worker
