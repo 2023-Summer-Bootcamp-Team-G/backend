@@ -71,13 +71,6 @@ class ImageGenAPI:
         if not redirect_url:
             raise Exception("'Location' header not found in the response.")
 
-            print(
-                f"Failed to get a valid response. Status Code: {response.status_code}"
-            )
-            raise Exception(
-                f"Failed to get a valid response. Status Code: {response.status_code}"
-            )
-
         # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
         redirect_url = response.headers.get("Location")
         if not redirect_url:

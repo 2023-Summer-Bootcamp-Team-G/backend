@@ -34,11 +34,11 @@ from .swagger_serializer import (
     PostFinalSubmitResponseSerializer,
 )
 
+from django.contrib.auth.decorators import login_required
+
 from celery_worker.tasks import create_character
 from celery.result import AsyncResult
 from api.api import upload_img_to_s3
-
-from common.auth import get_user_data
 
 fixed_question_num = 5
 
@@ -64,6 +64,15 @@ def extract_key_phrases(text, min_score=0.9):
         if phrase["Score"] >= min_score
     ]
     return key_phrases
+
+
+def get_ImageCreator_Cookie():
+    try:
+        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
+
+        return bingCookie
+    except Exception as e:
+        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
 # APIView 클래스 정의
@@ -238,10 +247,9 @@ class Characters(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        login = get_user_data(request)
-
+        login = request.user.is_authenticated
         print("login?", login)
-        # login = True
+
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
@@ -254,7 +262,7 @@ class Characters(APIView):
                 keyword = extract_key_phrases(answers[i])
                 # keyword = []
                 # 추출된 키워드 배열
-                keyword = [""] if len(keyword) == 0 else keyword
+                keyword = ["empty"] if len(keyword) == 0 else keyword
                 prompt.extend(keyword)
             else:
                 break
@@ -368,13 +376,13 @@ class DuplicateCharacter(APIView):
         responses={201: PostCharacterResponseSerializer},
     )
     def post(self, request):
-        login = get_user_data(request)
+        login = request.user.is_authenticated
         if login is False:
             return Response(
                 {"message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED
             )
 
-        user_id = request.data.get("user_id")
+        user_id = request.data.get("user_id")  # @login_required 임으로 굳이 data에서 안 가져와도 됨
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
@@ -387,10 +395,15 @@ class DuplicateCharacter(APIView):
 
         prompt = []
         for i in range(1, fixed_question_num + 1):
-            max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
-            prompt.append(str(max_value_keyword))
+            if keyword_count[i]:
+                max_value_keyword = max(keyword_count[i], key=keyword_count[i].get)
+                prompt.append(str(max_value_keyword))
+            else:
+                prompt.append("empty")  # tmp
 
-        submit_data = create_submit(poll_id, None, prompt, login)
+        submit_data = create_submit(
+            poll_id, None, prompt, True
+        )  # 마지막 로그인 검토 (always True)
         submit_id = submit_data["character_id"]
 
         task = create_character.delay(submit_id, prompt, True)
@@ -402,7 +415,7 @@ class DuplicateCharacter(APIView):
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
         # 중복 캐릭터에 대한 답변 저장
-        for i in range(len(prompt)):
+        for i in range(len(question_id_serializer.data)):
             keyword = prompt[i]
             if answer_list:  # 캐릭터에 대한 답변 업데이트
                 answer_list[i].content = None
@@ -449,7 +462,7 @@ class KeywordChart(APIView):
             sorted_keyword_count = dict(
                 sorted(keyword_count[i].items(), key=lambda x: x[1], reverse=True)
             )
-            
+
             # 예외 처리 (키가 빈문자열("") 인 경우)
             if "" in sorted_keyword_count.keys():
                 del sorted_keyword_count[""]
@@ -479,14 +492,11 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
             )  # status code 수정
 
         keyword = task.get()["keyword"].split(", ")
-        
+
         while "" in keyword:
             keyword.remove("")
-        
-        response_data = {
-            "result_url": task.get()["result_url"],
-            "keyword": keyword
-        }
+
+        response_data = {"result_url": task.get()["result_url"], "keyword": keyword}
 
         return Response(response_data, status=status.HTTP_200_OK)
 

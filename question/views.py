@@ -28,43 +28,6 @@ def create_poll(user_id):
         return None
 
 
-def get_user_data(request):
-    session_id = request.session.session_key
-    user_id = request.session.get("user_id")
-    nick_name = request.session.get("nick_name")
-
-    # 로그아웃 상태 확인
-    if "logout" in request.GET:
-        # 세션 데이터 삭제
-        request.session.flush()
-        user_id = None
-        nick_name = None
-
-    user_data = {
-        "session_id": session_id,
-        "user_id": user_id,
-        "nick_name": nick_name,
-    }
-
-    return JsonResponse(user_data)
-    if user_id and nick_name:
-        return True
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": user_id,
-        #     "nick_name": nick_name,
-        # }
-    else:
-        return False
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": None,
-        #     "nick_name": None,
-        # }
-
-    # return JsonResponse(user_data)
-
-
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
@@ -84,12 +47,17 @@ class Questions(APIView):
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
     )
+    # @login_required
     def post(self, request):
-        # login = get_user_data(request)
+        login = request.user.is_authenticated
+        print(request.user, login)
+
         # if not login:
         #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
 
         user_id = request.data.get("user_id")
+        print("Questions post: ", user_id)
+
         poll_id = create_poll(user_id)  # poll 생성
 
         if poll_id is None:

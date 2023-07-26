@@ -15,20 +15,27 @@ def get_ImageCreator_Cookie():
 
 
 def create_image(prompt):
-    image_links = None
-    # try:
-    # 이미지 생성 및 저장
-    auth_cookie = get_ImageCreator_Cookie()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-    image_generator = ImageGenAPI(auth_cookie)
-    image_links = image_generator.get_images(prompt)
+    # image_links = None
+    # # try:
+    # # 이미지 생성 및 저장
+    # auth_cookie = get_ImageCreator_Cookie()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+    # image_generator = ImageGenAPI(auth_cookie)
+    # image_links = image_generator.get_images(prompt)
 
-    # except Exception as e:
-    #     print(f"Error: {str(e)}")
-    # # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-    # return Response({"error": str(e)})
+    # # except Exception as e:
+    # #     print(f"Error: {str(e)}")
+    # # # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+    # # return Response({"error": str(e)})
 
-    # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-    return image_links
+    # # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+    # return image_links
+
+    return [
+        "https://th.bing.com/th/id/OIG.ctiYxxryky6aReKI63sl?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
+        "https://th.bing.com/th/id/OIG.vgrm.XjIyXYT_Xkk2jEM?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
+        "https://th.bing.com/th/id/OIG.M9rr.HWOki6gF4v92ULt?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
+        "https://th.bing.com/th/id/OIG.L6mTN8sQmnHQHHvUbWOZ?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
+    ]  # tmp
 
 
 @app.task
