@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, login
 
 # from django.contrib.sessions.backends.db import SessionStore
 # from django.views.decorators.csrf import csrf_protect
@@ -80,22 +80,24 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # 사용자 정보를 세션에 저장
-        request.session["user_id"] = user.user_id
-        request.session["nick_name"] = user.nick_name
+        login(request, user)
 
-        # 세션 ID를 클라이언트에게 전송
-        response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        response.set_cookie(
-            "sessionid",
-            request.session.session_key,
-            # domain="localhost",
-            httponly=True,
-            # secure=True,
-            samesite="Lax",
-        )
+        # # 사용자 정보를 세션에 저장
+        # request.session["user_id"] = user.user_id
+        # request.session["nick_name"] = user.nick_name
 
-        return response
+        # # 세션 ID를 클라이언트에게 전송
+        # response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        # response.set_cookie(
+        #     "sessionid",
+        #     request.session.session_key,
+        #     # domain="localhost",
+        #     httponly=True,
+        #     # secure=True,
+        #     samesite="Lax",
+        # )
+
+        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

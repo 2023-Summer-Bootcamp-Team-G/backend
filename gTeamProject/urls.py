@@ -23,7 +23,7 @@ from character.views import nlpAPI, Characters
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from question.views import get_user_data, Questions
+from question.views import Questions
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,7 +37,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/user-data", get_user_data),
     path("api/questions", Questions.as_view()),
     path("api/characters", Characters.as_view()),
     path("api/characters/", include("character.urls")),

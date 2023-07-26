@@ -17,60 +17,64 @@ class TestTeamGAPI(unittest.TestCase):
 
     results = dict()
 
-    # def test_00_test(self):
-    #     # TODO: 로그아웃 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-    #     # self.test_05_characters()
+    def test_00_test(self):
+        # TODO: 로그아웃 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
+        # self.test_05_characters()
 
-    #     data = {
-    #         "user_id": self.test_user_id,
-    #         "password": self.test_password,
-    #     }
-    #     response = self.session.post(f"{self.base_url}/api/login", json=data)
+        data = {
+            "user_id": self.test_user_id,
+            "password": self.test_password,
+        }
+        response = self.session.post(f"{self.base_url}/api/login", json=data)
 
-    #     self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
-    #     data = {
-    #         "poll_id": 1,
-    #         "creatorName": self.test_nick_name,
-    #         "answers": ["Answer 1", "Answer 2"],
-    #     }
-    #     response = self.session.post(f"{self.base_url}/api/characters", json=data)
+        data = {
+            "poll_id": 1,
+            "creatorName": self.test_nick_name,
+            "answers": ["Answer 1", "Answer 2"],
+        }
+        response = self.session.post(f"{self.base_url}/api/characters", json=data)
 
-    #     TestTeamGAPI.test_task_id = response.json()["task_id"]
+        TestTeamGAPI.test_task_id = response.json()["task_id"]
 
-    #     self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 201)
 
-    # @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
-    # def test_01_register(self):
-    #     # TODO: 회원가입 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-    #     data = {
-    #         "nick_name": self.test_nick_name,
-    #         "user_id": str(uuid.uuid4()),
-    #         "password": self.test_password,
-    #     }
+    @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
+    def test_01_register(self):
+        # TODO: 회원가입 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
+        data = {
+            "nick_name": self.test_nick_name,
+            "user_id": str(uuid.uuid4()),
+            "password": self.test_password,
+        }
 
-    #     response = self.session.post(f"{self.base_url}/api/register", json=data)
+        response = self.session.post(f"{self.base_url}/api/register", json=data)
 
-    #     self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 201)
 
-    # def test_02_login(self):
-    #     # TODO: 로그인 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-    #     data = {
-    #         "user_id": self.test_user_id,
-    #         "password": self.test_password,
-    #     }
-    #     response = self.session.post(f"{self.base_url}/api/login", json=data)
+    def test_02_login(self):
+        # TODO: 로그인 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
+        data = {
+            "user_id": self.test_user_id,
+            "password": self.test_password,
+        }
+        response = self.session.post(f"{self.base_url}/api/login", json=data)
 
-    #     self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_03_questions(self):
         # TODO: 질문 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
         data = {
+            "user": self.test_user_id,  # test
             "user_id": self.test_user_id,
             "questions": ["Question 1", "Question 2", "Question 3"],
         }
+
         response = self.session.post(f"{self.base_url}/api/questions", json=data)
+
+        print("response", response.text.replace("\n", "")[:128], end=" ")
 
         TestTeamGAPI.test_poll_id = response.json()["poll_id"]
 
@@ -94,6 +98,7 @@ class TestTeamGAPI(unittest.TestCase):
         }
         response = self.session.post(f"{self.base_url}/api/characters", json=data)
 
+        print("response", response.text.replace("\n", "")[:128], end=" ")
         TestTeamGAPI.test_task_id = response.json()["task_id"]
 
         self.assertEqual(response.status_code, 201)
@@ -162,14 +167,37 @@ class TestTeamGAPI(unittest.TestCase):
 
         data["session_id"] = "session_id_for_test"
 
+        TestTeamGAPI.test_task_id = ""
+        print(f'TestTeamGAPI.test_task_id: "{self.test_task_id}"')
+
         response = self.session.post(
             f"{self.base_url}/api/characters/duplicate", json=data
         )
 
-        self.assertEqual(response.status_code, 201, response.text)
+        TestTeamGAPI.test_task_id = response.json()["task_id"]
+        print(f'TestTeamGAPI.test_task_id: "{self.test_task_id}"')
+
+        self.assertEqual(
+            response.status_code, 201, response.text.replace("\n", "")[:128]
+        )
+
+    def test_12_characters_urls_read(self):
+        # TODO: 캐릭터 URL 읽기 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
+        while True:
+            response = self.session.get(
+                f"{self.base_url}/api/characters/urls/{self.test_task_id}"
+            )
+
+            if response.status_code == 200:
+                TestTeamGAPI.results["urls"] = response.json()["result_url"]
+                break
+            elif response.status_code != 202:
+                self.assertEqual(response.status_code, 200)
+
+            time.sleep(1)
 
     # @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
-    # def test_12_extract_phrases(self):
+    # def test_13_extract_phrases(self):
     #     # TODO: 구문 추출 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
     #     data = {"text": "This is a sample sentence for test."}  # 분석할 텍스트
     #     response = self.session.post(f"{self.base_url}/api/extract-phrases", json=data)
@@ -177,14 +205,14 @@ class TestTeamGAPI(unittest.TestCase):
     #     TestTeamGAPI.results["extract_phrases_post"] = response.json()
     #     self.assertEqual(response.status_code, 200)
 
-    # def test_13_extract_phrases_list(self):
+    # def test_14_extract_phrases_list(self):
     #     # TODO: 구문 추출 리스트 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
     #     response = self.session.get(f"{self.base_url}/api/extract-phrases")
     #     TestTeamGAPI.results["extract_phrases_get"] = response.json()
     #     self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
-    def test_14_logout(self):
+    def test_15_logout(self):
         # TODO: 로그아웃 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
         response = self.session.post(f"{self.base_url}/api/logout")
         self.assertEqual(response.status_code, 200)
