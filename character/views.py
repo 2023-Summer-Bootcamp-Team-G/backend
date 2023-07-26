@@ -467,12 +467,8 @@ class KeywordChart(APIView):
             if "" in sorted_keyword_count.keys():
                 del sorted_keyword_count[""]
 
-            total = sum(sorted_keyword_count.values())
             for key in sorted_keyword_count:
-                sorted_keyword_count[key] = [sorted_keyword_count[key]]
-                sorted_keyword_count[key].append(
-                    round(sorted_keyword_count[key][0] / total * 100, 2)
-                )
+                sorted_keyword_count[key] = sorted_keyword_count[key]
             keyword_count[i] = {i: sorted_keyword_count}
         keyword_count.pop(0)
 
