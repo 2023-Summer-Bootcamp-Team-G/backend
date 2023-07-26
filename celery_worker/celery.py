@@ -2,9 +2,8 @@ from celery import Celery
 import os
 import django
 
-django.setup()
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gTeamProject.settings")
+django.setup()
 
 app = Celery(include=["celery_worker.tasks"])
 
