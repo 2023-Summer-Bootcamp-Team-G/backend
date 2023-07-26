@@ -27,6 +27,7 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class AnswerPostSerializer(serializers.ModelSerializer):
+    keyword = serializers.CharField(allow_blank=True, allow_null=True)
     class Meta:
         model = Answer
         fields = ["question_id", "submit_id", "num", "content", "keyword"]
