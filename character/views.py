@@ -386,6 +386,7 @@ class DuplicateCharacter(APIView):
     )
     def post(self, request):
         login = request.user.is_authenticated
+        login_user_id = request.user.user_id
         if login is False:
             return Response(
                 {"message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED
@@ -411,7 +412,7 @@ class DuplicateCharacter(APIView):
                 prompt.append("")  # tmp
 
         submit_data = create_submit(
-            poll_id, None, prompt, True
+            poll_id, None, prompt, login_user_id
         )  # 마지막 로그인 검토 (always True)
         submit_id = submit_data["character_id"]
 
