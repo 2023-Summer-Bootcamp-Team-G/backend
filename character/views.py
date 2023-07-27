@@ -144,9 +144,15 @@ class nlpAPI(APIView):
 #     return keyword[num]
 
 
-def create_submit(poll_id, nick_name, prompt, login):
+def create_submit(poll_id, nick_name, prompt, login_user_id):
     poll = Poll.objects.get(id=poll_id)
     user_id = poll.user_id
+
+    if login_user_id != user_id:
+        login = False
+    else:
+        login = True
+    print("create_submit login", login)
 
     submit_data = {
         "user_id": user_id,
@@ -250,6 +256,9 @@ class Characters(APIView):
         login = request.user.is_authenticated
         print("login?", login)
 
+        login_user_id = request.user.user_id
+        print(login_user_id)
+
         poll_id = request.data.get("poll_id")
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
@@ -267,7 +276,7 @@ class Characters(APIView):
             else:
                 break
         # 캐릭터 생성
-        submit_data = create_submit(poll_id, nick_name, prompt, login)
+        submit_data = create_submit(poll_id, nick_name, prompt, login_user_id)
         submit_id = submit_data["character_id"]
 
         # 이미지 생성 시작(여기서 빈 문자열을 굳이 보낼 필요가 있을까)
@@ -377,6 +386,7 @@ class DuplicateCharacter(APIView):
     )
     def post(self, request):
         login = request.user.is_authenticated
+        login_user_id = request.user.user_id
         if login is False:
             return Response(
                 {"message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED
@@ -402,7 +412,7 @@ class DuplicateCharacter(APIView):
                 prompt.append("")  # tmp
 
         submit_data = create_submit(
-            poll_id, None, prompt, True
+            poll_id, None, prompt, login_user_id
         )  # 마지막 로그인 검토 (always True)
         submit_id = submit_data["character_id"]
 
@@ -413,9 +423,10 @@ class DuplicateCharacter(APIView):
         question_id_serializer = QuestionIdSerializer(question, many=True)
 
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
-
+        print(prompt, len(prompt))
+        print(len(question_id_serializer.data))
         # 중복 캐릭터에 대한 답변 저장
-        for i in range(len(question_id_serializer.data)):
+        for i in range(len(prompt)):
             keyword = prompt[i]
             if answer_list:  # 캐릭터에 대한 답변 업데이트
                 answer_list[i].content = None
@@ -467,12 +478,8 @@ class KeywordChart(APIView):
             if "" in sorted_keyword_count.keys():
                 del sorted_keyword_count[""]
 
-            total = sum(sorted_keyword_count.values())
             for key in sorted_keyword_count:
-                sorted_keyword_count[key] = [sorted_keyword_count[key]]
-                sorted_keyword_count[key].append(
-                    round(sorted_keyword_count[key][0] / total * 100, 2)
-                )
+                sorted_keyword_count[key] = sorted_keyword_count[key]
             keyword_count[i] = {i: sorted_keyword_count}
         keyword_count.pop(0)
 
