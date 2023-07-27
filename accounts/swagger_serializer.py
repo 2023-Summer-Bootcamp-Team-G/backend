@@ -17,4 +17,4 @@ class PostLoginRequestSerializer(serializers.Serializer):
 
 
 class PostLoginResponseSerializer(serializers.Serializer):
-    token = serializers.CharField()
+    message = serializers.CharField()
