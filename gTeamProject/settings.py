@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from datetime import timedelta
 from common.aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,8 +24,13 @@ AUTHENTICATION_BACKENDS = [
 # 세션 관리를 위한 쿠키 설정
 SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
 SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
-SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
+SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정 / Strict: 동일한 (Origin)로의 요청에만 쿠키를 전송
+SESSION_COOKIE_AGE = int(timedelta(days=14).total_seconds())  # 2주
+
+CSRF_COOKIE_SECURE = False  # 테스트 전용, 로그인 csrf 우회
+# CSRF_HEADER_NAME = "csrftoken"
+# CSRF_COOKIE_NAME = "csrftoken"
+# CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -40,9 +45,9 @@ INSTALLED_APPS = [
     "question",
     "character",
     "corsheaders",
-    # "django_celery_results",
     "django_redis",
-    "django_prometheus",
+    # "django_prometheus",
+    # "django_celery_results",
 ]
 
 # Gunicorn 설정
@@ -58,6 +63,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "common.middleware.CsrfCookieMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -142,13 +148,6 @@ STATIC_ROOT = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
-
-CELERY_TIMEZONE = "Asia/Seoul"
-CELERY_BROKER_URL = "amqp://rabbitmq:5672"
-CELERY_RESULT_BACKEND = "redis://redis:6379"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
 
 CACHES = {
     "default": {

@@ -1,11 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+<<<<<<< HEAD
 from django.contrib.auth import get_user_model, authenticate
 from django.http import JsonResponse
 from question.views import get_user_data
 from django.http import QueryDict
 from django.http import HttpResponse
+=======
+from django.contrib.auth import get_user_model, authenticate, login, logout
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
 
 # from django.contrib.sessions.backends.db import SessionStore
 # from django.views.decorators.csrf import csrf_protect
@@ -84,25 +88,29 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # 사용자 정보를 세션에 저장
-        request.session["user_id"] = user.user_id
-        request.session["nick_name"] = user.nick_name
+        login(request, user)
 
-        # 세션 ID를 클라이언트에게 전송
-        response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        response.set_cookie(
-            "sessionid",
-            request.session.session_key,
-            httponly=True,
-            # secure=True,
-            samesite="Lax",
-        )
+        # # 사용자 정보를 세션에 저장
+        # request.session["user_id"] = user.user_id
+        # request.session["nick_name"] = user.nick_name
 
-        return response
+        # # 세션 ID를 클라이언트에게 전송
+        # response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        # response.set_cookie(
+        #     "sessionid",
+        #     request.session.session_key,
+        #     # domain="localhost",
+        #     httponly=True,
+        #     # secure=True,
+        #     samesite="Lax",
+        # )
+
+        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
     def post(self, request):
+<<<<<<< HEAD
         session_id = request.session.session_key
         user_id = request.session.get("user_id")
         nick_name = request.session.get("nick_name")
@@ -113,6 +121,15 @@ class LogoutView(APIView):
         # 사용자 정보 초기화 (로그아웃 처리)
         request.session["user_id"] = None
         request.session["nick_name"] = None
+=======
+        # 세션 삭제
+        # request.session.flush()
+        # # 사용자 정보 초기화
+        # request.session["user_id"] = None
+        # request.session["nick_name"] = None
+
+        logout(request)
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
 
         # 세션 삭제
         request.session.flush()

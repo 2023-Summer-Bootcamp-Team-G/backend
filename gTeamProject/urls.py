@@ -23,7 +23,11 @@ from character.views import nlpAPI, Characters
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+<<<<<<< HEAD
 from question.views import get_user_data, Questions, get_whoUser_data
+=======
+from question.views import Questions
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,8 +41,11 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+<<<<<<< HEAD
     path("api/user-data", get_user_data, name="get_user_data"),
     path("api/whouser-data", get_whoUser_data, name="get_whoUser_data"),
+=======
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
     path("api/questions", Questions.as_view()),
     path("api/characters", Characters.as_view()),
     path("api/characters/", include("character.urls")),
@@ -46,10 +53,12 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+<<<<<<< HEAD
     path("", include("django_prometheus.urls")),
+=======
+    # path("prometheus/", include("django_prometheus.urls")),
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
 ]
-
-# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
     path(

@@ -17,8 +17,6 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
-from django.http import JsonResponse
-from django.contrib.auth import authenticate
 
 
 def create_poll(user_id):
@@ -30,6 +28,7 @@ def create_poll(user_id):
         return None
 
 
+<<<<<<< HEAD
 def get_user_data(request):
     print("get_user_data 함수가 호출되었습니다.")
     session_id = request.session.session_key
@@ -70,6 +69,8 @@ def get_whoUser_data(request):
     return JsonResponse(user_data)
 
 
+=======
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
@@ -89,12 +90,21 @@ class Questions(APIView):
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
     )
+    # @login_required
     def post(self, request):
+<<<<<<< HEAD
         # login = get_user_data(request)
+=======
+        login = request.user.is_authenticated
+        print(request.user, login)
+
+>>>>>>> 9c47c1d887fd60beaf88d79e41a2d4a3099f34d0
         # if not login:
         #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
 
         user_id = request.data.get("user_id")
+        print("Questions post: ", user_id)
+
         poll_id = create_poll(user_id)  # poll 생성
 
         if poll_id is None:
