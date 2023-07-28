@@ -11,6 +11,9 @@ from .swagger_serializer import (
     PostLoginResponseSerializer,
 )
 
+from question.models import Poll
+from common.auth import encrypt_resource_id
+
 User = get_user_model()
 
 
@@ -35,7 +38,7 @@ class RegisterView(APIView):
                 {"error": "Username already exists."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         if ":" in user_id:
             return Response(
                 {"error": "user_id에 ':'가 포함되었어요! 다른 id를 입력해 주세요!."},
@@ -82,7 +85,23 @@ class LoginView(APIView):
 
         login(request, user)
 
-        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        nick_name = user.nick_name
+        poll_id = (
+            Poll.objects.filter(user_id=user.user_id).order_by("created_at").last().id
+        )
+
+        print(poll_id)
+
+        return Response(
+            {
+                "user_data": {
+                    "nick_name": nick_name,
+                    "poll_id": encrypt_resource_id(poll_id),
+                },
+                "message": "Login successful.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class LogoutView(APIView):
