@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "character",
     "corsheaders",
     "django_redis",
-    # "django_prometheus",
+    "django_prometheus",
     # "django_celery_results",
 ]
 

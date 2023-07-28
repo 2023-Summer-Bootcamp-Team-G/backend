@@ -186,3 +186,6 @@ fabric.properties
 static/
 /character/images
 images/
+
+monitor/prometheus/data/
+monitor/grafana/*.db
