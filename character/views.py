@@ -153,10 +153,16 @@ class Characters(APIView):
         responses={200: GetCharacterListResponseSerializer},
     )
     def get(self, request):
-        user_id = decrypt_resource_id(request.query_params.get("user_id"))
+        user_id = request.query_params.get("user_id", None)
 
-        if user_id is None:
-            Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+        if user_id is not None:
+            user_id = decrypt_resource_id(user_id)
+        elif request.user.is_authenticated:
+            user_id = request.user.user_id
+        else:
+            return Response(
+                {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         submit = Submit.objects.filter(user_id=user_id)
         submit_serializer = SubmitSerializer(submit, many=True)
@@ -198,7 +204,7 @@ class Characters(APIView):
             character["id"] = encrypt_resource_id(character["id"])
 
         return Response(
-            {"characters": user_characters},
+            {"nick_name": nick_name, "characters": user_characters},
             status=status.HTTP_200_OK,
         )
 
