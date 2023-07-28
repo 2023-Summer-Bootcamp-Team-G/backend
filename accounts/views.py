@@ -1,15 +1,7 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from django.contrib.auth import get_user_model, authenticate, login, logout
-
-# from django.contrib.sessions.backends.db import SessionStore
-# from django.views.decorators.csrf import csrf_protect
-
-# authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
-# 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
-# login은 인증된 사용즈랄 로그인 처리, 세션 관리, 필요 데이터 저장해서
-# 사용자를 로그인 상태로 유지하는 내장 함수
 
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
@@ -44,13 +36,15 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # User 생성
         user = User(
             user_id=user_id,
             nick_name=nick_name,
             password=password,
         )
+
         user.save()
+
+        login(request, user)
 
         return Response(
             {"message": "User registered successfully."}, status=status.HTTP_201_CREATED
@@ -82,32 +76,10 @@ class LoginView(APIView):
 
         login(request, user)
 
-        # # 사용자 정보를 세션에 저장
-        # request.session["user_id"] = user.user_id
-        # request.session["nick_name"] = user.nick_name
-
-        # # 세션 ID를 클라이언트에게 전송
-        # response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        # response.set_cookie(
-        #     "sessionid",
-        #     request.session.session_key,
-        #     # domain="localhost",
-        #     httponly=True,
-        #     # secure=True,
-        #     samesite="Lax",
-        # )
-
         return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
     def post(self, request):
-        # 세션 삭제
-        # request.session.flush()
-        # # 사용자 정보 초기화
-        # request.session["user_id"] = None
-        # request.session["nick_name"] = None
-
         logout(request)
-
         return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
