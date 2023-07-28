@@ -44,7 +44,7 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
-    # path("prometheus/", include("django_prometheus.urls")),
+    path("", include("django_prometheus.urls")),
 ]
 
 urlpatterns += [

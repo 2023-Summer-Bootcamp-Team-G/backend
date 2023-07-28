@@ -43,6 +43,12 @@ class RegisterView(APIView):
                 {"error": "Username already exists."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        if ":" in user_id:
+            return Response(
+                {"error": "user_id에 ':'가 포함되었어요! 다른 id를 입력해 주세요!."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # User 생성
         user = User(
