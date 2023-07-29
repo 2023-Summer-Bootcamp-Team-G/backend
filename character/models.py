@@ -16,3 +16,4 @@ class Answer(BaseModel):
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE, null=False)
     num = models.IntegerField(null=False)
     content = models.CharField(max_length=200, null=True)
+    keyword = models.CharField(max_length=200, null=True)

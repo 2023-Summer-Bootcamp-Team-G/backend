@@ -4,8 +4,9 @@ services:
   webapp:
     container_name: web_app
     build: .
+    command: sh -c "test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload"
     ports:
-      - "8000:8000"
+      - 8000:8000
     depends_on:
       - celery
       - rabbit
@@ -17,7 +18,8 @@ services:
 
   celery:
     container_name: celery_worker
-    build: ./celery_worker
+    build: .
+    command: sh -c "celery -A celery_worker worker --loglevel=info"
     depends_on:
       - rabbit
       - redis
@@ -45,136 +47,121 @@ services:
     hostname: redis
     networks:
       - mynetwork
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: prometheus
-  #   user: root
-  #   # volumes:
-  #   #   - /home/monitor/prometheus/:/etc/prometheus/
-  #   #   - /home/monitor/prometheus/data:/prometheus
-  #   ports:
-  #     - 9090:9090
 
-  # grafana:
-  #   container_name: grafana
-  #   image: grafana/grafana:latest
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=admin
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   # volumes:
-  #   #   - /home/monitor/grafana:/var/lib/grafana
-  #   #   - /home/monitor/grafana/provisioning:/etc/grafana/provisioning
-  #   ports:
-  #     - 3000:3000
-  #   depends_on:
-  #     - prometheus
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+    volumes:
+      - ./monitor/grafana:/var/lib/grafana
+      - ./monitor/grafana/provisioning:/etc/grafana/provisioning
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    user: root
+    ports:
+      - 9090:9090
+    volumes:
+      - ./monitor/prometheus:/etc/prometheus
+      - ./monitor/prometheus/data:/prometheus
+    networks:
+      - mynetwork
 
   # setup:
-  #     profiles:
-  #       - setup
-  #     build:
-  #       context: ./docker-elk/setup/
-  #       args:
-  #         ELASTIC_VERSION: ${ELASTIC_VERSION}
-  #     init: true
-  #     volumes:
-  #       - ./docker-elk/setup/entrypoint.sh:/entrypoint.sh:ro,Z
-  #       - ./docker-elk/setup/lib.sh:/lib.sh:ro,Z
-  #       - ./docker-elk/setup/roles:/roles:ro,Z
-  #     environment:
-  #       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-  #       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
-  #       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-  #       METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
-  #       FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
-  #       HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
-  #       MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
-  #       BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
-  #     networks:
-  #       - elk
-  #     depends_on:
-  #       - elasticsearch
+  #   profiles:
+  #     - setup
+  #   build:
+  #     context: ./docker-elk/setup
+  #     args:
+  #       ELASTIC_VERSION: ${ELASTIC_VERSION}
+  #   init: true
+  #   environment:
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+  #     LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+  #     KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+  #     METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+  #     FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+  #     HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+  #     MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+  #     BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+  #   networks:
+  #     - elk
+  #   depends_on:
+  #     - elasticsearch
+  #   volumes:
+  #     - ./docker-elk/setup/entrypoint.sh:/entrypoint.sh:ro,Z
+  #     - ./docker-elk/setup/lib.sh:/lib.sh:ro,Z
+  #     - ./docker-elk/setup/roles:/roles:ro,Z
 
-  #   elasticsearch:
-  #     build:
-  #       context: ./docker-elk/elasticsearch/
-  #       args:
-  #         ELASTIC_VERSION: ${ELASTIC_VERSION}
-  #     volumes:
-  #       - ./docker-elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
-  #       - elasticsearch:/usr/share/elasticsearch/data:Z
-  #     ports:
-  #       - 9200:9200
-  #       - 9300:9300
-  #     environment:
-  #       node.name: elasticsearch
-  #       ES_JAVA_OPTS: -Xms512m -Xmx512m
-  #       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-  #       discovery.type: single-node
-  #     networks:
-  #       - elk
-  #     restart: unless-stopped
+  # elasticsearch:
+  #   build:
+  #     context: ./docker-elk/elasticsearch/
+  #     args:
+  #       ELASTIC_VERSION: ${ELASTIC_VERSION}
+  #   volumes:
+  #     - ./docker-elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+  #     - elasticsearch:/usr/share/elasticsearch/data:Z
+  #   ports:
+  #     - 9200:9200
+  #     - 9300:9300
+  #   environment:
+  #     node.name: elasticsearch
+  #     ES_JAVA_OPTS: -Xms512m -Xmx512m
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+  #     discovery.type: single-node
+  #   networks:
+  #     - elk
+  #   restart: unless-stopped
 
-  #   logstash:
-  #     build:
-  #       context: ./docker-elk/logstash/
-  #       args:
-  #         ELASTIC_VERSION: ${ELASTIC_VERSION}
-  #     volumes:
-  #       - ./docker-elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
-  #       - ./docker-elk/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
-  #     ports:
-  #       - 5044:5044
-  #       - 50000:50000/tcp
-  #       - 50000:50000/udp
-  #       - 9600:9600
-  #     environment:
-  #       LS_JAVA_OPTS: -Xms256m -Xmx256m
-  #       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
-  #     networks:
-  #       - elk
-  #     depends_on:
-  #       - elasticsearch
-  #     restart: unless-stopped
+  # logstash:
+  #   build:
+  #     context: ./docker-elk/logstash/
+  #     args:
+  #       ELASTIC_VERSION: ${ELASTIC_VERSION}
+  #   volumes:
+  #     - ./docker-elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+  #     - ./docker-elk/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+  #   ports:
+  #     - 5044:5044
+  #     - 50000:50000/tcp
+  #     - 50000:50000/udp
+  #     - 9600:9600
+  #   environment:
+  #     LS_JAVA_OPTS: -Xms256m -Xmx256m
+  #     LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+  #   networks:
+  #     - elk
+  #   depends_on:
+  #     - elasticsearch
+  #   restart: unless-stopped
 
-  #   kibana:
-  #     build:
-  #       context: ./docker-elk/kibana/
-  #       args:
-  #         ELASTIC_VERSION: ${ELASTIC_VERSION}
-  #     volumes:
-  #       - ./docker-elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
-  #     ports:
-  #       - 5601:5601
-  #     environment:
-  #       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-  #     networks:
-  #       - elk
-  #     depends_on:
-  #       - elasticsearch
-  #     restart: unless-stopped
-
-  #   # 추가한 서비스 (web)
-  #   web:
-  #     build: .
-  #     command: gunicorn gTeamProject.wsgi:application --bind 0.0.0.0:8000
-  #     volumes:
-  #       - ./:/usr/src/app/
-  #     ports:
-  #       - "8000:8000"
-  #     env_file:
-  #       - ./.env # 개발 환경 설정 파일은 .env.dev 대신 env.prod 권장
-
-  # networks:
-  #   elk:
-  #     driver: bridge
-
-  # volumes:
-  #   elasticsearch:
-  #   rabbit:
-  #   celery_worker:
-  #   redis:
+  # kibana:
+  #   build:
+  #     context: ./docker-elk/kibana/
+  #     args:
+  #       ELASTIC_VERSION: ${ELASTIC_VERSION}
+  #   volumes:
+  #     - ./docker-elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+  #   ports:
+  #     - 5601:5601
+  #   environment:
+  #     KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+  #   networks:
+  #     - elk
+  #   depends_on:
+  #     - elasticsearch
+  #   restart: unless-stopped
 
 networks:
   mynetwork:
+    driver: bridge
+
+  elk:
     driver: bridge

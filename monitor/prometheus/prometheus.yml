@@ -8,8 +8,10 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
-  - job_name: "test-monitoring"
+  - job_name: "django"
     metrics_path: /metrics
     static_configs:
     - targets: 
-      - localhost:8000
+      - host.docker.internal:8000
+      # - localhost:8000
+      # - 127.0.0.1:8000

@@ -1,6 +1,7 @@
 from pathlib import Path
-import os
+from datetime import timedelta
 from common.aws import AWSManager
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,20 +15,40 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEBUG = True  # Set False when production!!
 
-ALLOWED_HOSTS = ["*"]  # 검토 필요
+ALLOWED_HOSTS = ["*"]  # 도메인, 아이피 확정후 설정 // ALLOWED_HOSTS = ['localhost',]
 
 AUTH_USER_MODEL = "accounts.User"
 
-# Django의 인증 시스템에서 사용자를 자연키로 검색하기 위한 설정
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-# 세션 관리를 위한 쿠키 설정
-SESSION_COOKIE_HTTPONLY = True  # JavaScript에서 접근 불가능하도록 설정
-SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송
-SESSION_COOKIE_SAMESITE = "Lax"  # SameSite 설정
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 2주(초단위)
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
+SESSION_REDIS = {
+    # "HOST": "redis",
+    "HOST": "localhost",
+    "PORT": 6379,
+    # "DB": 0,
+}
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = int(timedelta(days=14).total_seconds())
+
+CORS_ORIGIN_WHITELIST = [
+    "https://localhost:*",  # for dev remove
+    "http://localhost:*",  # for dev remove
+    "https://3.35.88.150:8000",
+    "http://3.35.88.150:8000",
+]
+
+WSGI_APPLICATION = "gTeamProject.wsgi.application"
+# # Gunicorn이 사용할 워커 프로세스 수 설정
+# # 예시: 워커 프로세스를 4개로 설정
+# # NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -36,37 +57,31 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "gunicorn",
     "drf_yasg",
     "rest_framework",
     "accounts",
     "question",
     "character",
     "corsheaders",
-    # "django_celery_results",
     "django_redis",
-    # "django_prometheus",
-    "sslserver",
+    "django_prometheus",
+    # "django_celery_results",
 ]
 
-# Gunicorn 설정
-INSTALLED_APPS += ["gunicorn"]
-# Gunicorn을 웹 서버로 사용하기 위해 WSGI_APPLICATION 설정
-WSGI_APPLICATION = "gTeamProject.wsgi.application"
-# Gunicorn이 사용할 워커 프로세스 수 설정
-# 예시: 워커 프로세스를 4개로 설정
-# NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌
-
 MIDDLEWARE = [
-    # "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "common.middleware.CsrfCookieMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    # "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "gTeamProject.middleware.GetUserDataMiddleware"
 ]
 
 ROOT_URLCONF = "gTeamProject.urls"
@@ -106,6 +121,8 @@ DATABASES = {
     }
 }
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -141,20 +158,12 @@ STATIC_ROOT = "static/"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-CORS_ORIGIN_ALLOW_ALL = True  # 검토 필요
-
-CELERY_TIMEZONE = "Asia/Seoul"
-CELERY_BROKER_URL = "amqp://rabbitmq:5672"
-CELERY_RESULT_BACKEND = "redis://redis:6379"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379",
+        "LOCATION": "redis://redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }

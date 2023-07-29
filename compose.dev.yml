@@ -33,8 +33,9 @@ services:
   web_app:
     container_name: web_app
     build: .
+    command: sh -c "test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload"
     ports:
-      - "8000:8000"
+      - 8000:8000
     depends_on:
       - celery
       - rabbit
@@ -44,7 +45,8 @@ services:
 
   celery:
     container_name: celery_worker
-    build: ./celery_worker
+    build: .
+    command: sh -c "celery -A celery_worker worker --loglevel=info"
     depends_on:
       - rabbit
       - redis

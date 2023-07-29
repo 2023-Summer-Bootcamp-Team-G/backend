@@ -1,7 +1,6 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.http import JsonResponse
 
 from .serializer import (
     QuestionSerializer,
@@ -19,6 +18,8 @@ from question.models import Poll, Question
 from accounts.models import User
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
+
+from common.auth import encrypt_resource_id, decrypt_resource_id
 
 
 def create_poll(user_id):
@@ -73,13 +74,24 @@ class Questions(APIView):
         responses={200: GetQuestionResponseSerializer},
     )
     def get(self, request):
-        poll_id = request.GET.get("poll_id")
+        poll_id = decrypt_resource_id(request.GET.get("poll_id"))
+        if poll_id is None:
+            Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+
         poll = Poll.objects.get(id=poll_id)
+        user_id = poll.user_id
+        user = User.objects.get(user_id=user_id)
+        nick_name = user.nick_name
+
         questions = Question.objects.filter(poll_id=poll)
 
         questions_serializer = QuestionTextSerializer(questions, many=True)
         response_data = [item["question_text"] for item in questions_serializer.data]
-        response = {"questions": response_data}
+        response = {
+            "user_id": encrypt_resource_id(user_id),
+            "nick_name": nick_name,
+            "questions": response_data,
+        }
         return Response(response, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -87,11 +99,13 @@ class Questions(APIView):
         responses={201: PostQuestionResponseSerializer},
     )
     def post(self, request):
-        login = get_user_data(request)
-        # if not login:
-        #     return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_authenticated:
+            return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            user_id = request.user.user_id
 
-        user_id = request.data.get("user_id")
+        print(request.user.user_id)
+
         poll_id = create_poll(user_id)  # poll 생성
 
         if poll_id is None:
@@ -121,11 +135,14 @@ class Questions(APIView):
         updated_serializer = UpdatedQuestionSerializer(
             data=updated_questions, many=True
         )
+
         if updated_serializer.is_valid():
             updated_serializer.save()
         else:
             return Response(
                 {"error": updated_serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
-        response = {"poll_id": poll_id}
-        return Response(response, status=status.HTTP_201_CREATED)
+
+        return Response(
+            {"poll_id": encrypt_resource_id(poll_id)}, status=status.HTTP_201_CREATED
+        )
