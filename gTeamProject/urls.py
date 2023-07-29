@@ -20,6 +20,7 @@ from django.conf import settings
 from django.urls import path, include, re_path
 from accounts.views import RegisterView, LoginView, LogoutView, KakaoSignInView, KakaoSignInCallbackView
 from character.views import nlpAPI, Characters
+from health.views import health_check
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -47,6 +48,7 @@ urlpatterns = [
     path('sign-in/kakao/', KakaoSignInView.as_view()),
     path('sign-in/kakao/callback/', KakaoSignInCallbackView.as_view()),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+    path("api/health", health_check.as_view(), name="health-check"),
     path("", include("django_prometheus.urls")),
 ]
 
