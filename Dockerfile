@@ -43,14 +43,15 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-COPY . .
+# 'static' 디렉토리 생성 및 권한 설정
+RUN mkdir -p /usr/src/app/static && chown -R appuser:appuser /usr/src/app/static
 
-RUN chown -R appuser:appuser .
+COPY . .
 
 USER appuser
 
-# EXPOSE 8000
+EXPOSE 8000
 
-# CMD test -d static \
-#     && python manage.py collectstatic --noinput \
-#     && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload
+CMD python manage.py collectstatic --noinput \
+    && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload
+

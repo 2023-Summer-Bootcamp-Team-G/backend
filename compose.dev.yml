@@ -19,8 +19,7 @@ services:
       - mynetwork
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
-
-  certbot: #certbot 컨테이너 추가
+  certbot:
     image: certbot/certbot
     restart: unless-stopped
     container_name: certbot
@@ -34,18 +33,22 @@ services:
   web_app:
     container_name: web_app
     build: .
+    command: sh -c "test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload"
     ports:
-      - "8000:8000"
+      - 8000:8000
     depends_on:
       - celery
       - rabbit
       - redis
     networks:
-      - mynetwork  # 추가: mynetwork 네트워크에 속함
+      - mynetwork
+    volumes:
+      - ./:/usr/src/app
 
   celery:
     container_name: celery_worker
-    build: ./celery_worker
+    build: .
+    command: sh -c "celery -A celery_worker worker --loglevel=info"
     depends_on:
       - rabbit
       - redis
