@@ -15,4 +15,6 @@ class GetQuestionRequestSerializer(serializers.Serializer):
 
 
 class GetQuestionResponseSerializer(serializers.Serializer):
+    user_id = serializers.CharField()
+    nick_name = serializers.CharField()
     questions = serializers.ListField(child=serializers.CharField())

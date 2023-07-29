@@ -1,15 +1,7 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from django.contrib.auth import get_user_model, authenticate, login, logout
-
-# from django.contrib.sessions.backends.db import SessionStore
-# from django.views.decorators.csrf import csrf_protect
-
-# authenticate는 사용자 인증을 수행하는 내장함수, 인증 자격증명(사용자 id, 비밀번호)을
-# 사용하여 사용자 인증, 인증에 성공한 경우 사용자 객체 반환, 실패한 경우 `none` 반환
-# login은 인증된 사용즈랄 로그인 처리, 세션 관리, 필요 데이터 저장해서
-# 사용자를 로그인 상태로 유지하는 내장 함수
 
 from drf_yasg.utils import swagger_auto_schema
 from .swagger_serializer import (
@@ -18,6 +10,9 @@ from .swagger_serializer import (
     PostLoginRequestSerializer,
     PostLoginResponseSerializer,
 )
+
+from question.models import Poll
+from common.auth import encrypt_resource_id
 
 User = get_user_model()
 
@@ -44,13 +39,21 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # User 생성
+        if ":" in user_id:
+            return Response(
+                {"error": "user_id에 ':'가 포함되었어요! 다른 id를 입력해 주세요!."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = User(
             user_id=user_id,
             nick_name=nick_name,
             password=password,
         )
+
         user.save()
+
+        login(request, user)
 
         return Response(
             {"message": "User registered successfully."}, status=status.HTTP_201_CREATED
@@ -82,39 +85,26 @@ class LoginView(APIView):
 
         login(request, user)
 
-        # # 사용자 정보를 세션에 저장
-        # request.session["user_id"] = user.user_id
-        # request.session["nick_name"] = user.nick_name
+        nick_name = user.nick_name
+        poll_id = (
+            Poll.objects.filter(user_id=user.user_id).order_by("created_at").last().id
+        )
 
-        # # 세션 ID를 클라이언트에게 전송
-        # response = Response({"message": "Login successful."}, status=status.HTTP_200_OK)
-        # response.set_cookie(
-        #     "sessionid",
-        #     request.session.session_key,
-        #     # domain="localhost",
-        #     httponly=True,
-        #     # secure=True,
-        #     samesite="Lax",
-        # )
+        print(poll_id)
 
-        return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "user_data": {
+                    "nick_name": nick_name,
+                    "poll_id": encrypt_resource_id(poll_id),
+                },
+                "message": "Login successful.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class LogoutView(APIView):
     def post(self, request):
-        # 세션 삭제
-        # request.session.flush()
-        # # 사용자 정보 초기화
-        # request.session["user_id"] = None
-        # request.session["nick_name"] = None
-
         logout(request)
-
-        # 세션 삭제
-        request.session.flush()
-
-        response = HttpResponse()
-        response.delete_cookie('sessionid')
-
-        # 미들웨어를 통해 유저 정보를 받아오기 위해 빈 응답 반환
-        return Response({}, status=status.HTTP_200_OK)
+        return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
