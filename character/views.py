@@ -230,6 +230,9 @@ class Characters(APIView):
         nick_name = request.data.get("creatorName")
         answers = request.data.get("answers")
 
+        for i in range(len(answers)):
+            answers[i] += " 사용해"
+
         prompt = []
 
         # 답변 추출
@@ -245,6 +248,7 @@ class Characters(APIView):
         # 캐릭터 생성
         submit_data = create_submit(poll_id, nick_name, prompt, is_creator)
         submit_id = submit_data["character_id"]
+        print(*prompt)
 
         # 이미지 생성 시작(여기서 빈 문자열을 굳이 보낼 필요가 있을까)
         task = create_character.delay(submit_id, prompt)
