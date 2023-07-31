@@ -36,16 +36,30 @@ docker-compose up
 # File Structure
 <details><summary>Frontend
 </summary>
-```
-react
-```
+<code>react</code>
 </details>
 <details><summary>Backend
 </summary>
-```
-django
-```
+<code>django</code>
 </details>
+
+## Detailed Info
+**NAME** | **Description**
+:---:|:---:
+Nginx |  | 
+React |  | 
+Django |  | 
+Gunicorn | |
+Mysql(RDS) | Database | 
+RabbitMQ |  | 
+Celery |  | 
+Grafana |  | 
+Prometheus |  | 
+Filebeat | Nginx의 로그파일을 Filebeat로 수집합니다. | 
+Logstash | Filebeat로 수집한 로그를 Logstash에 전달합니다. |
+Elasticsearch | Logstash로부터 전달 받은 로그를 Elasticsearch에 저장합니다. | 
+Kibana | Elasticsearch에 저장된 로그를 Kibana를 통해 분석 및 시각화합니다. | 
+***
 
 # Team Member
 
