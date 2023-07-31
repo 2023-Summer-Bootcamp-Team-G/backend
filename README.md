@@ -1,3 +1,4 @@
+# It's ME?!
 # Instruction
 질문에 대한 친구들의 답변들의 키워드를 추출하여 본인을 형상화한 캐릭터를 만들어주는 서비스
 
@@ -18,6 +19,33 @@
 ```
 docker-compose up
 ```
+# Database
+<details><summary>ERD
+</summary>
+<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/c2c0fbac-7ee4-451d-bcee-016cd8973df8
+/>
+</details>
+
+# API
+<details><summary>swagger
+</summary>
+<img src=
+/>
+</details>
+
+# File Structure
+<details><summary>Frontend
+</summary>
+```
+react
+```
+</details>
+<details><summary>Backend
+</summary>
+```
+django
+```
+</details>
 
 # Team Member
 
