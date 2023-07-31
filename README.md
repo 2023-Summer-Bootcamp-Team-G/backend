@@ -65,5 +65,5 @@ Kibana | Elasticsearch에 저장된 로그를 Kibana를 통해 분석 및 시각
 
 | Name | 최세엽 | 황장현 | 정우희 | 김동헌 | 김주언 | 이지은 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Role | Team Leader</br>Backend</br>DevOps| Frontend | Frontend | >Backend | Backend | Frontend |
+| Role | Team Leader</br>Backend</br>DevOps| Frontend | Frontend | Backend | Backend | Frontend |
 | GitHub | [non-cpu](https://github.com/non-cpu) | [JH722](https://github.com/JH722) | [woohee-jeong](https://github.com/woohee-jeong) | [heondong9265](https://github.com/heondong9265) | [wndjs803](https://github.com/wndjs803) | [egg-silver](https://github.com/egg-silver) |
