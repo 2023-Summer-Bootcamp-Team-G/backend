@@ -1,8 +1,11 @@
 import os
 import re
 import time
+import httpx
 import random
+import asyncio
 import requests
+
 from enum import Enum
 
 BING_URL = "https://www.bing.com"
@@ -21,148 +24,101 @@ HEADERS = {
 
 class Error(Enum):
     ERROR_TIMEOUT = "Your request has timed out."
-    ERROR_BLOCKED_PROMPT = "Your prompt has been blocked by Bing. Try to change any bad words and try again."
-    ERROR_BEING_REVIEWED_PROMPT = "Your prompt is being reviewed by Bing. Try to change any sensitive words and try again."
+    ERROR_BLOCKED_PROMPT = (
+        "Your prompt has been blocked. Try to change any bad words and try again."
+    )
+    ERROR_BEING_REVIEWED_PROMPT = "Your prompt is being reviewed. Try to change any sensitive words and try again."
     ERROR_NO_RESULTS = "Could not get results"
-    ERROR_UNSUPPORTED_LANG = "This language is currently not supported by Bing"
+    ERROR_UNSUPPORTED_LANG = "This language is currently not supported"
     ERROR_NO_IMAGES = "No images"
+    ERROR_MANY_REQUESTS = "Can't submit any more prompts. Please wait until your other ongoing creations are complete."
+    EERROR_PROBLEM_CREATING_IMAGES = "There was a problem creating your images."
+    ERROR_UNKNOWN = "Unknown error"
 
 
 class ImageGenAPI:
-    def __init__(self, auth_cookie: str):
-        self.session: requests.Session = requests.Session()
-        self.session.headers = HEADERS
-        self.session.cookies.set("_U", auth_cookie)
+    TIMEOUT = 128
 
-    def get_images(self, prompt: str):
+    def __init__(
+        self,
+        auth_cookie: str,
+    ):
+        self.session = httpx.AsyncClient(headers=HEADERS, cookies={"_U": auth_cookie})
+
+    async def get_images(self, prompt):
+        start_time = time.time()
+
         url_encoded_prompt = requests.utils.quote(prompt)
-        payload = f"q={url_encoded_prompt}&qs=ds"
 
-        url = f"{BING_URL}/images/create?q={url_encoded_prompt}&rt=4&FORM=GENCRE"
-        response = self.session.post(
-            url,
-            allow_redirects=False,
-            data=payload,
-            timeout=200,
+        response = await self.session.post(
+            f"{BING_URL}/images/create?q={url_encoded_prompt}&rt=3&FORM=GENCRE",  # &rt=4
+            follow_redirects=False,
+            data=f"q={url_encoded_prompt}&qs=ds",
         )
 
-        # 응답 내용을 확인하여 오류 메시지 또는 예상치 못한 내용이 있는지 확인
-        if "errorMessage" in response.text.lower():
-            print("Error Message:", response.text)
+        if response.status_code == 302:
+            redirect_url = response.headers.get("Location", None)
 
-        res_message = response.text.lower()
-
-        if "this prompt is being reviewed" in res_message:
-            raise Exception(Error.ERROR_BEING_REVIEWED_PROMPT.value)
-        if "this prompt has been blocked" in res_message:
-            raise Exception(Error.ERROR_BLOCKED_PROMPT.value)
-
-        if response.status_code != 302:
-            # 오류 처리
-            print(
-                f"Failed to get a valid response. Status Code: {response.status_code}"
-            )
-            raise Exception(
-                f"Failed to get a valid response. Status Code: {response.status_code}"
-            )
-
-        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
-        redirect_url = response.headers.get("Location")
-        if not redirect_url:
-            raise Exception("'Location' header not found in the response.")
-
-        # "Location" 헤더가 존재하는지 확인한 후에 해당 값을 액세스합니다.
-        redirect_url = response.headers.get("Location")
-        if not redirect_url:
-            raise Exception("'Location' header not found in the response.")
-
-        # # Get redirect URL
-        # redirect_url = response.headers["Location"].replace("&nfy=1", "")
-        # request_id = redirect_url.split("id=")[-1]
-        self.session.get(f"{BING_URL}{redirect_url}")
-        polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
-
-        start_wait = time.time()
-
-        while True:
-            if int(time.time() - start_wait) > 200:
-                raise Exception(Error.ERROR_TIMEOUT.value)
-
-            response = self.session.get(polling_url)
-
-            if response.status_code != 200:
-                raise Exception(Error.ERROR_NO_RESULTS.value)
-
-            if not response.text or "errorMessage" in response.text:  # 무한 루프?
-                time.sleep(1)
+            if redirect_url is not None:
+                redirect_url = redirect_url.replace("&nfy=1", "")
+                await self.session.get(f"{BING_URL}{redirect_url}")
+                polling_url = f"{BING_URL}/images/create/async/results/{redirect_url.split('id=')[-1]}?q={url_encoded_prompt}"
             else:
-                break
+                raise Exception("redirect_url not found")
 
-        image_links = re.findall(r'src="([^"]+)"', response.text)
+            timeout_start = time.time()
 
-        if len(image_links) == 0:
-            print("No images found.")
-            raise Exception(Error.ERROR_NO_IMAGES.value)
+            while True:
+                response = await self.session.get(polling_url)
 
-        normal_image_links = [link.split("?w=")[0] for link in image_links]
+                if response.status_code != 200:
+                    raise Exception(Error.ERROR_NO_RESULTS.value)
+                elif time.time() - timeout_start > self.TIMEOUT:
+                    raise Exception(Error.ERROR_TIMEOUT.value)
+                elif not response.text or "errorMessage" in response.text:
+                    if "errorMessage" in response.text:
+                        print("has errorMessage")
+                    await asyncio.sleep(1)
+                else:
+                    break
 
-        return normal_image_links
+            image_links = re.findall(r'src="([^"]+)"', response.text)
+
+            if len(image_links) == 0:
+                raise Exception(Error.ERROR_NO_IMAGES.value)
+
+            normal_image_links = [link.split("?w=")[0] for link in image_links]
+
+            processing_time = time.time() - start_time
+
+            return normal_image_links, processing_time
+        else:
+            res_message = response.text.lower()
+
+            if "can't submit any more prompts" in res_message:
+                raise Exception(Error.ERROR_MANY_REQUESTS.value)
+            elif "this prompt has been blocked" in res_message:
+                raise Exception(Error.ERROR_BLOCKED_PROMPT.value)
+            elif "this prompt is being reviewed" in res_message:
+                raise Exception(Error.ERROR_BEING_REVIEWED_PROMPT.value)
+            elif "problem creating your images" in res_message:
+                raise Exception(Error.EERROR_PROBLEM_CREATING_IMAGES.value)
+            else:
+                raise Exception(Error.ERROR_UNKNOWN.value)
+
+
+async def test(prompt):
+    result = await image_generator.get_images(prompt)
+    print(result)
 
 
 if __name__ == "__main__":
-    prompt = "a 4d shaped hamburger, digital art"
-    # prompt = "여우 분홍색 지브리 개 기타 도서관"
+    prompt = "여우 분홍색 지브리 개 기타 도서관"
 
     image_generator = ImageGenAPI(
         os.getenv("BING_SESSION_ID")
-    )  # .env 에 추가, BING_SESSION_ID=ID
+    )  # .env 에 추가, BING_SESSION_ID
 
-    iL = image_generator.get_images(prompt)
-
-    print(iL)
-
-    """
-    참고 코드 시작
-    """
-    # from aws import AWSManager
-    # from datetime import timedelta, datetime
-
-    # AWSManager.get_comprehend_client()  # 참고로 이것도 만들어 놨어
-    # s3_client = AWSManager.get_s3_client()
-    # bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
-    # expires_in = int(timedelta(days=1).total_seconds())  # URL의 만료 시간 (초 단위)
-
-    # s3_client.put_object(Bucket=bucket_name, Key=uuid, Body=decoded_data)
-
-    # url, expiration_time = generate_presigned_url(uuid)
-
-    # def generate_presigned_url(object_name):
-    # try:
-    #     expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
-
-    #     # Pre-signed URL 생성
-    #     response = s3_client.generate_presigned_url(
-    #         "get_object",
-    #         Params={
-    #             "Bucket": bucket_name,
-    #             "Key": object_name,
-    #             "ResponseContentType": "image/png",
-    #         },
-    #         ExpiresIn=expires_in,
-    #     )
-
-    #     return response, expiration_time
-    # except ClientError as e:
-    #     print(f"Error generating presigned URL: {e}")
-    #     return None, None
-
-    # # # 파일 삭제
-    # # s3_client.delete_object(Bucket=bucket_name, Key=key)
-
-    """
-    참고 코드 끝
-    """
-
-    # (response.content) 추후 저장
+    asyncio.run(test(prompt))
 
     # 웹 쿠키 얻기 cookieStore.get("_U").then(result => console.log(result.value))

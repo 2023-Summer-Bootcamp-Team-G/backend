@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.signing import Signer, BadSignature
 
-bypass = True  # True
+bypass = False
 signer = Signer(settings.SECRET_KEY)
 
 
