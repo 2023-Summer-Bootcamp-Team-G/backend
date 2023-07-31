@@ -32,20 +32,17 @@ RUN apt-get update \
     && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# certbot을 설치합니다.
-RUN apt-get update && apt-get install -y certbot
+# 복사하여 requirements.txt를 컨테이너에 복사
+COPY requirements.txt .
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
+# requirements.txt로부터 종속성 설치
+RUN python -m pip install -r requirements.txt
 
-# 'static' 디렉토리 생성 및 권한 설정
-RUN mkdir -p /usr/src/app/static && chown -R appuser:appuser /usr/src/app/static
+# 'data/static' 디렉토리 생성 및 권한 설정
+RUN mkdir -p /usr/src/app/data/static
+RUN chown -R appuser:appuser /usr/src/app/data
 
+# 현재 디렉토리의 모든 파일 복사
 COPY . .
 
 USER appuser

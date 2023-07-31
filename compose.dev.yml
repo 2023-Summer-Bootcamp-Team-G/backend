@@ -5,8 +5,7 @@ services:
     build: ./nginx
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     volumes:
        - ./nginx:/etc/nginx/conf.d
        - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -44,6 +43,8 @@ services:
       - mynetwork
     volumes:
       - ./:/usr/src/app
+    environment:
+      - GUNICORN_CMD_ARGS=--timeout 120
 
   celery:
     container_name: celery_worker
