@@ -22,7 +22,7 @@ docker-compose up
 # Database
 <details><summary>ERD
 </summary>
-<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/c2c0fbac-7ee4-451d-bcee-016cd8973df8
+<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/5fb8a02a-b305-47d3-80d6-28285ce1fc14
 />
 </details>
 
