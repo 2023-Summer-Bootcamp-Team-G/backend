@@ -29,7 +29,7 @@ from .swagger_serializer import (
     PostCharacterResponseSerializer,
     GetKeywordChartResponseSerializer,
     GetURLsResponseSerializer,
-    GetCharacterInfoResponseSerializer,
+    # GetCharacterInfoResponseSerializer,
     PostFinalSubmitRequestSerializer,
     PostFinalSubmitResponseSerializer,
 )
@@ -293,6 +293,7 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
     def get(self, _, task_id):
         task = AsyncResult(task_id)
+
         if not task.ready():
             return Response(
                 # {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
@@ -300,7 +301,13 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
                 status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
 
-        keyword = task.get()["keyword"].split(", ")
+        result = task.get()
+        if result is not None:
+            keyword = result["keyword"].split(", ")
+        else:
+            return Response(
+                "bing_api error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         while "" in keyword:
             keyword.remove("")
@@ -500,18 +507,18 @@ class KeywordChart(APIView):
         return Response(Response_data, status=status.HTTP_200_OK)
 
 
-class CharacterInfo(APIView):
-    @swagger_auto_schema(responses={200: GetCharacterInfoResponseSerializer})
-    def get(self, request, task_id):  # 최종 결과물
-        task = AsyncResult(task_id)
-        submit_id = task.get()["submit_id"]
-        keyword = task.get()["keyword"]
+# class CharacterInfo(APIView):
+#     @swagger_auto_schema(responses={200: GetCharacterInfoResponseSerializer})
+#     def get(self, request, task_id):  # 최종 결과물
+#         task = AsyncResult(task_id)
+#         submit_id = task.get()["submit_id"]
+#         keyword = task.get()["keyword"]
 
-        submit = Submit.objects.get(id=submit_id)
-        response_data = SubmitSerializer(submit).data
-        response_data["keyword"] = keyword
+#         submit = Submit.objects.get(id=submit_id)
+#         response_data = SubmitSerializer(submit).data
+#         response_data["keyword"] = keyword
 
-        return Response(response_data, status=status.HTTP_200_OK)
+#         return Response(response_data, status=status.HTTP_200_OK)
 
 
 # APIView 클래스 정의

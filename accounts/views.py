@@ -36,7 +36,7 @@ class RegisterView(APIView):
         if User.objects.filter(user_id=user_id).exists():
             return Response(
                 {"error": "Username already exists."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_409_CONFLICT,
             )
 
         if ":" in user_id:
@@ -85,18 +85,18 @@ class LoginView(APIView):
 
         login(request, user)
 
-        nick_name = user.nick_name
-        poll_id = (
-            Poll.objects.filter(user_id=user.user_id).order_by("created_at").last().id
-        )
+        poll = Poll.objects.filter(user_id=user.user_id).order_by("created_at").last()
 
-        print(poll_id)
+        if poll is not None:
+            poll_id = encrypt_resource_id(poll.id)
+        else:
+            poll_id = None
 
         return Response(
             {
                 "user_data": {
-                    "nick_name": nick_name,
-                    "poll_id": encrypt_resource_id(poll_id),
+                    "nick_name": user.nick_name,
+                    "poll_id": poll_id,
                 },
                 "message": "Login successful.",
             },
