@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class GetCharacterListRequestSerializer(serializers.Serializer):
-    user_id = serializers.CharField()
+    user_id = serializers.CharField(required=False)
 
 
 class CharacterInfoSerializer(serializers.Serializer):
@@ -13,6 +13,7 @@ class CharacterInfoSerializer(serializers.Serializer):
 
 
 class GetCharacterListResponseSerializer(serializers.Serializer):
+    nick_name = serializers.CharField()
     characters = CharacterInfoSerializer(many=True)
 
 

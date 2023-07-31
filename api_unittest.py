@@ -37,6 +37,15 @@ class TestTeamGAPI(unittest.TestCase):
 
     def test_00_test(self):
         # TODO: 테스트
+        # session, data = self.create_logged_in_session(True)
+
+        # del data["nick_name"]
+
+        # response = self.main_session.post(f"{self.base_url}/api/login", json=data)
+
+        # print(response.content)
+
+        # self.assertTrue(False)
         pass
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
@@ -51,6 +60,9 @@ class TestTeamGAPI(unittest.TestCase):
             "password": self.main_password,
         }
         response = self.main_session.post(f"{self.base_url}/api/login", json=data)
+
+        # print(response.json())
+
         self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
@@ -139,7 +151,12 @@ class TestTeamGAPI(unittest.TestCase):
 
                 if responses[i].status_code == 200:
                     data = responses[i].json()
-                    TestTeamGAPI.results["urls"] = data["result_url"]
+
+                    TestTeamGAPI.results["urls"] = TestTeamGAPI.results.get(
+                        "urls", list()
+                    )
+                    TestTeamGAPI.results["urls"].append(data["result_url"])
+
                     responses[i] = None
                     completed_test += 1
 
@@ -168,6 +185,11 @@ class TestTeamGAPI(unittest.TestCase):
         params = {
             "user_id": self.main_user_id,
         }
+
+        # # for test
+        # params = {}
+        # TestTeamGAPI.main_session = requests.session()
+
         response = self.main_session.get(
             f"{self.base_url}/api/characters", params=params
         )
@@ -269,6 +291,11 @@ if __name__ == "__main__":
 
     print(
         "\n",
-        "\n".join([f"{key}: {value}\n" for key, value in TestTeamGAPI.results.items()]),
+        "\n".join(
+            [
+                f"{key}: " + "\n".join(str(item) + "\n" for item in value)
+                for key, value in TestTeamGAPI.results.items()
+            ]
+        ),
         "\n",
     )
