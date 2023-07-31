@@ -1,54 +1,100 @@
+import uuid
+import redis
+import asyncio
+
 from .celery import app
-from api.imageGenAPI import ImageGenAPI
-from api.api import upload_img_to_s3
 from common.aws import AWSManager
 from character.models import Submit
+from api.api import upload_img_to_s3
+from api.imageGenAPI import ImageGenAPI
+
+MAX_CONCURRENT_REQUESTS = 3
+
+redis_client = redis.StrictRedis(host="redis", port=6379, db=2)
 
 
+# ## 아직 작업 중 시작
 def get_ImageCreator_Cookie():
     try:
-        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
-
-        return bingCookie
+        return AWSManager.get_secret("BingImageCreator")["cookie"]
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
-def create_image(prompt):
-    # image_links = None
-    # # try:
-    # # 이미지 생성 및 저장
-    # auth_cookie = get_ImageCreator_Cookie()  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-    # image_generator = ImageGenAPI(auth_cookie)
-    # image_links = image_generator.get_images(prompt)
+import os
 
-    # # except Exception as e:
-    # #     print(f"Error: {str(e)}")
-    # # # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-    # # return Response({"error": str(e)})
+auth_cookies = [
+    get_ImageCreator_Cookie(),
+    # os.getenv("BING_SESSION_ID"),
+]  # os.getenv("BING_SESSION_ID") 이거 빼고 테스트
+# ## 아직 작업 중 끝
 
-    # # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-    # return image_links
-
-    return [
-        "https://th.bing.com/th/id/OIG.ctiYxxryky6aReKI63sl?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.vgrm.XjIyXYT_Xkk2jEM?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.M9rr.HWOki6gF4v92ULt?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-        "https://th.bing.com/th/id/OIG.L6mTN8sQmnHQHHvUbWOZ?w=270&h=270&c=6&r=0&o=5&pid=ImgGn",
-    ]  # tmp
+app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(auth_cookies)})
 
 
-@app.task
-def create_character(submit_id, prompt, duplicate=False):
-    prompt = ", ".join(prompt)
-    result_url = create_image(prompt)
-    if duplicate:
-        result_url = result_url[0]
+def get_round_robin_key():
+    cookie_index = redis_client.incr("cookie_index")
+    cookie_index %= len(auth_cookies)
+    return cookie_index, auth_cookies[cookie_index]
 
-        final_url = upload_img_to_s3(result_url)
 
-        submit = Submit.objects.get(id=submit_id)
-        submit.result_url = final_url
-        submit.save()
+async def create_image(key, auth_cookie, prompt):
+    while True:
+        current_requests = redis_client.incr(key)
+        if current_requests <= MAX_CONCURRENT_REQUESTS:
+            redis_client.delete(key + ":lock")  # 락 해제
+            print("get request approval " + str(current_requests))
+            print("delete lock " + key + ":lock")
+            break
+        else:
+            redis_client.decr(key)
+            await asyncio.sleep(1)
 
-    return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
+    try:
+        image_generator = ImageGenAPI(auth_cookie)
+        result = await image_generator.get_images(prompt)
+        return result
+    except Exception as e:
+        raise e
+    finally:
+        redis_client.decr(key)
+
+
+@app.task(bind=True)
+def create_character(self, submit_id, prompt, duplicate=False):
+    cookie_index, auth_cookie = get_round_robin_key()
+
+    key = "concurrent_requests_" + str(cookie_index)
+
+    lock_acquired = False
+
+    try:
+        lock_owner = str(uuid.uuid4())
+
+        while not lock_acquired:
+            lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
+            if lock_acquired:
+                redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
+                print("get lock " + key + ":lock " + lock_owner)
+
+        prompt = ", ".join(prompt)  # prompt 처리 추가
+
+        loop = asyncio.get_event_loop()
+        result_url, _ = loop.run_until_complete(create_image(key, auth_cookie, prompt))
+
+        if duplicate:
+            result_url = upload_img_to_s3(result_url[0])
+
+            submit = Submit.objects.get(id=submit_id)
+            submit.result_url = result_url
+            submit.save()
+
+        return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
+    except Exception as e:
+        self.update_state(state="FAILURE")
+
+        raise ValueError("Some condition is not met. " + str(e))
+    finally:
+        if redis_client.get(key + ":lock") == lock_owner:
+            redis_client.delete(key + ":lock")  # 락 해제
+            print("delete lock " + key + ":lock " + lock_owner)
