@@ -46,15 +46,15 @@ docker-compose up
 ## Detailed Info
 **NAME** | **Description**
 :---:|:---:
-Nginx |  | 
-React |  | 
-Django |  | 
+Nginx | 웹서버, 프록시 서버, https 연결 등을 담당합니다. | 
+React | 질문 생성 및 답변, 캐릭터를 생성하여 보여주는 역할을 담당합니다. | 
+Django | It'me의 서버로서 각종 요청을 처리하며 DB와 직접 소통합니다. | 
 Gunicorn | |
 Mysql(RDS) | Database | 
-RabbitMQ |  | 
-Celery |  | 
-Grafana |  | 
-Prometheus |  | 
+RabbitMQ | 메세지 브로커로서 이미지 생성 처리 시간이 길기 때문에 사용합니다. | 
+Celery | 이미지 생성과 같은 작업을 비동기 수행하기 위해 사용합니다. | 
+Grafana | Prometheus로부터 받은 메트릭 데이터 등을 시각화하여 대시보드를 구성합니다. | 
+Prometheus | Django의 메트릭 데이터를 수집하여 모니터링 합니다. | 
 Filebeat | Nginx의 로그파일을 Filebeat로 수집합니다. | 
 Logstash | Filebeat로 수집한 로그를 Logstash에 전달합니다. |
 Elasticsearch | Logstash로부터 전달 받은 로그를 Elasticsearch에 저장합니다. | 
