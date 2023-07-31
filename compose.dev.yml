@@ -5,22 +5,25 @@ services:
     build: ./nginx
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+       - 80:8080
+    #  - "80:80"
+    #  - "443:443"
     volumes:
        - ./nginx:/etc/nginx/conf.d
-       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-       - ./nginx/nginx-app.conf:/etc/nginx/sites-available/nginx-app.conf
-       - ./certbot/conf:/etc/letsencrypt
-       - ./certbot/www:/var/www/certbot
+      # - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./nginx/nginx-app.conf:/etc/nginx/sites-available/nginx-app.conf
+      # - ./certbot/conf:/etc/letsencrypt
+      # - ./certbot/conf/live/1tsme.site/fullchain.pem:/etc/letsencrypt/live/1tsme.site/fullchain.pem:ro
+      # - ./certbot/conf/live/1tsme.site/privkey.pem:/etc/letsencrypt/live/1tsme.site/privkey.pem:ro
+      # - ./certbot/www:/var/www/certbot
+       - ./nginx/log:/var/log/nginx
     depends_on:
       - web_app
     networks:
       - mynetwork
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
-
-  certbot: #certbot 컨테이너 추가
+  certbot:
     image: certbot/certbot
     restart: unless-stopped
     container_name: certbot
@@ -29,23 +32,27 @@ services:
       - ./certbot/www:/var/www/certbot
     depends_on:
       - nginx
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 90d; certbot renew; done;'"
 
   web_app:
     container_name: web_app
     build: .
+    command: sh -c "test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn 'gTeamProject.wsgi:application' --bind=0.0.0.0:8000 --reload"
     ports:
-      - "8000:8000"
+      - 8000:8000
     depends_on:
       - celery
       - rabbit
       - redis
     networks:
-      - mynetwork  # 추가: mynetwork 네트워크에 속함
+      - mynetwork
+    volumes:
+      - ./:/usr/src/app
 
   celery:
     container_name: celery_worker
-    build: ./celery_worker
+    build: .
+    command: sh -c "celery -A celery_worker worker --loglevel=info"
     depends_on:
       - rabbit
       - redis
@@ -73,6 +80,80 @@ services:
     hostname: redis
     networks:
       - mynetwork
+
+  elasticsearch:
+    build:
+      context: ./ELK/elasticsearch
+      args:
+        ELASTIC_VERSION: 7.17.8
+    volumes:
+      - ./ELK/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: teacheer
+      discovery.type: single-node
+    restart: unless-stopped
+    networks:
+      - mynetwork
+
+  logstash:
+      build:
+        context: ./ELK/logstash
+        args:
+          ELASTIC_VERSION: 7.17.8
+      volumes:
+        - ./ELK/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+        - ./ELK/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+      ports:
+        - 5044:5044
+        - 50000:50000/tcp
+        - 50000:50000/udp
+        - 9600:9600
+      environment:
+        LS_JAVA_OPTS: -Xms256m -Xmx256m
+        LOGSTASH_INTERNAL_PASSWORD: teacheer
+      depends_on:
+        - elasticsearch
+      restart: unless-stopped
+      networks:
+        - mynetwork
+
+  kibana:
+      build:
+        context: ./ELK/kibana
+        args:
+          ELASTIC_VERSION: 7.17.8
+      volumes:
+        - ./ELK/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+      ports:
+        - 5601:5601
+      environment:
+        KIBANA_SYSTEM_PASSWORD: teacheer
+      depends_on:
+        - elasticsearch
+      restart: unless-stopped
+      networks:
+        - mynetwork
+
+  filebeat:
+      build:
+        context: ./ELK/filebeat
+        args:
+          ELASTIC_VERSION: 7.17.8
+      entrypoint: "filebeat -e -strict.perms=false"
+      volumes:
+        - ./ELK/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+        - ./nginx/log:/var/log/nginx
+      depends_on:
+        - logstash
+        - elasticsearch
+        - kibana
+      networks:
+        - mynetwork
 
 networks:
   mynetwork:
