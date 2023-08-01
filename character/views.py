@@ -234,6 +234,8 @@ class Characters(APIView):
 
         # 답변 추출
         for i in range(len(answers)):
+            answers[i] += " 사용해"
+
             if i < fixed_question_num:
                 keyword = extract_key_phrases(answers[i])
                 # keyword = []
