@@ -104,7 +104,7 @@ def create_character(self, submit_id, keywords, duplicate=False):
             submit.result_url = result_url
             submit.save()
 
-        return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
+        return {"result_url": result_url, "submit_id": submit_id, "keyword": keywords}
     except Exception as e:
         self.update_state(state="FAILURE")
 
