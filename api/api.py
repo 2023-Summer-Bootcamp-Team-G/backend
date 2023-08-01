@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 
 s3_client = AWSManager.get_s3_client()
 bucket_name = s3_client.list_buckets()["Buckets"][0]["Name"]
-expires_in = int(timedelta(days=14).total_seconds())  # URL의 만료 시간 (초 단위)
+expires_in = int(timedelta(days=7).total_seconds())  # URL의 만료 시간 (초 단위)
 
 
 def upload_img_to_s3(url):
