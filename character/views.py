@@ -147,6 +147,21 @@ def create_submit(poll_id, nick_name, prompt, is_creator):
     return submit_data
 
 
+def create_answer(question_id, submit_id, i, content, keyword):
+    data = {
+        "question_id": question_id,
+        "submit_id": submit_id,
+        "num": i + 1,
+        "content": content,
+        "keyword": keyword,
+    }
+    answer_serializer = AnswerPostSerializer(data=data)
+    if answer_serializer.is_valid():
+        answer_serializer.save()
+    else:
+        return Response(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class Characters(APIView):
     @swagger_auto_schema(
         query_serializer=GetCharacterListRequestSerializer,
@@ -265,33 +280,21 @@ class Characters(APIView):
         # 답변 저장
         for i in range(len(answers)):
             content = answers[i]
-            print("content:", content)
             if i < fixed_question_num:
                 keyword = prompt[i]
             else:
                 keyword = None
-
             question_id = question_id_serializer.data[i]["id"]
 
             if answer_list:  # 캐릭터에 대한 답변 업데이트
-                answer_list[i].content = content
-                answer_list[i].keyword = keyword
-                answer_list[i].save()
-            else:  # 캐릭터에 대한 답변 생성
-                data = {
-                    "question_id": question_id,
-                    "submit_id": submit_id,
-                    "num": i + 1,
-                    "content": content,
-                    "keyword": keyword,
-                }
-                answer_serializer = AnswerPostSerializer(data=data)
-                if answer_serializer.is_valid():
-                    answer_serializer.save()
+                if len(answer_list) <= i:
+                    create_answer(question_id, submit_id, i, content, keyword)
                 else:
-                    return Response(
-                        answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                    )
+                    answer_list[i].content = content
+                    answer_list[i].keyword = keyword
+                    answer_list[i].save()
+            else:  # 캐릭터에 대한 답변 생성
+                create_answer(question_id, submit_id, i, content, keyword)
 
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
