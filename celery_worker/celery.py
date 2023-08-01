@@ -18,6 +18,7 @@ app.conf.update(
         "task_time_limit": 64,
         "task_max_retries": 0,
         "result_expires": 3600,
+        # "worker_pool": "threads",
     }
 )
 __all__ = ["app"]
