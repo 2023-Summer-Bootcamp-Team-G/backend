@@ -258,6 +258,8 @@ class Characters(APIView):
         # 캐릭터 아이디로 답변 검색
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
+        print("n_answers, prev:", len(answer_list), "now:", len(answers))
+
         # 답변 저장
         for i in range(len(answers)):
             content = answers[i]
@@ -299,9 +301,11 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
         if not task.ready():
             return Response(
                 # {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
-                {"status": task.state},
+                # {"status": task.state},
                 status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
+
+        # 롱폴링 구현 필요
 
         result = task.get()
         if result is not None:

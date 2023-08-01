@@ -20,7 +20,9 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = False
+
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = int(timedelta(days=14).total_seconds())

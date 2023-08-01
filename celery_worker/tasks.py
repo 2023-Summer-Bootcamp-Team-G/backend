@@ -93,6 +93,7 @@ def create_character(self, submit_id, keywords, duplicate=False):
             if lock_acquired:
                 redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
                 print("get lock " + key + ":lock " + lock_owner)
+                logger.info("get lock " + key + ":lock " + lock_owner)
 
         loop = asyncio.get_event_loop()
         result_url, _ = loop.run_until_complete(create_image(key, auth_cookie, prompt))
