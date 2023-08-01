@@ -310,7 +310,7 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
 
         result = task.get()
         if result is not None:
-            keyword = result["keyword"].split(", ")
+            keyword = result["keyword"]
         else:
             return Response(
                 "bing_api error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
