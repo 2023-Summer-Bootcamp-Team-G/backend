@@ -33,6 +33,7 @@ CORS_ORIGIN_WHITELIST = [
 ]
 
 WSGI_APPLICATION = "gTeamProject.wsgi.application"
+# ASGI_APPLICATION = "gTeamProject.asgi.application"
 # # Gunicorn이 사용할 워커 프로세스 수 설정
 # # 예시: 워커 프로세스를 4개로 설정
 # # NUM_WORKERS = 4 # 별도로 설정 안해도 됨, Gunicorn에서 설정해줌

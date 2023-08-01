@@ -172,23 +172,29 @@ class Characters(APIView):
 
         if user_id is not None:
             user_id = decrypt_resource_id(user_id)
+
         elif request.user.is_authenticated:
             user_id = request.user.user_id
+
         else:
             return Response(
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        submit = Submit.objects.filter(user_id=user_id)
+        submit = Submit.objects.filter(user_id=user_id).order_by("created_at")
         submit_serializer = SubmitSerializer(submit, many=True)
 
         # user nick_name 가져오기
         user = User.objects.get(user_id=user_id)
+
         nick_name = user.nick_name
 
         user_characters = []
 
+        count = 0
+        duplicate_character = None
         for data in submit_serializer.data:
+            data["id"] = encrypt_resource_id(data["id"])
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] is None:
                 data["nick_name"] = nick_name
@@ -205,6 +211,11 @@ class Characters(APIView):
                         break
                 # response data에 키워드 추가
                 data["keyword"] = keyword
+                if count == 0:
+                    my_character = data
+                if count == 1:
+                    duplicate_character = data
+                count += 1
                 user_characters.append(data)
 
         filtered_data = [
@@ -213,13 +224,18 @@ class Characters(APIView):
             if character not in user_characters
         ]
 
-        user_characters.extend(filtered_data)
+        # user_characters.extend(filtered_data)
 
-        for character in user_characters:
-            character["id"] = encrypt_resource_id(character["id"])
+        # for character in user_characters:
+        #     character["id"] = encrypt_resource_id(character["id"])
 
         return Response(
-            {"nick_name": nick_name, "characters": user_characters},
+            {
+                "nick_name": nick_name,
+                "my_character": my_character,
+                "duplicate_character": duplicate_character,
+                "characters": filtered_data,
+            },
             status=status.HTTP_200_OK,
         )
 
