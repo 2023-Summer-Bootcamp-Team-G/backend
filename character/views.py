@@ -477,10 +477,16 @@ class KeywordChart(APIView):
         responses={200: GetKeywordChartResponseSerializer},
     )
     def get(self, request):
-        user_id = decrypt_resource_id(request.query_params.get("user_id"))
+        user_id = request.query_params.get("user_id", None)
 
-        if user_id is None:
-            Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+        if user_id is not None:
+            user_id = decrypt_resource_id(user_id)
+        elif request.user.is_authenticated:
+            user_id = request.user.user_id
+        else:
+            return Response(
+                {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
