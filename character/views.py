@@ -238,9 +238,13 @@ class Characters(APIView):
 
             if i < fixed_question_num:
                 keyword = extract_key_phrases(answers[i])
-                # keyword = []
+                print("extracted_keyword:", keyword)
+                if len(keyword) == 0:
+                    keyword = [answers[i].replace(" 사용해", "")]
+                else:
+                    keyword
+                print("keyword:", keyword)
                 # 추출된 키워드 배열
-                keyword = [""] if len(keyword) == 0 else keyword
                 prompt.extend(keyword)
             else:
                 break
