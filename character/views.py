@@ -234,13 +234,17 @@ class Characters(APIView):
 
         # 답변 추출
         for i in range(len(answers)):
-            answers[i] += " 사용해"
+            temp_answer = answers[i] + " 사용해"
 
             if i < fixed_question_num:
-                keyword = extract_key_phrases(answers[i])
-                # keyword = []
+                keyword = extract_key_phrases(temp_answer)
+                print("extracted_keyword:", keyword)
+                if len(keyword) == 0 or keyword == temp_answer:
+                    keyword = [temp_answer.replace(" 사용해", "")]
+                else:
+                    keyword
+                print("keyword:", keyword)
                 # 추출된 키워드 배열
-                keyword = [""] if len(keyword) == 0 else keyword
                 prompt.extend(keyword)
             else:
                 break
@@ -261,6 +265,7 @@ class Characters(APIView):
         # 답변 저장
         for i in range(len(answers)):
             content = answers[i]
+            print("content:", content)
             if i < fixed_question_num:
                 keyword = prompt[i]
             else:
