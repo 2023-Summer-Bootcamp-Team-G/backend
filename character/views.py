@@ -172,14 +172,14 @@ class Characters(APIView):
 
         if user_id is not None:
             user_id = decrypt_resource_id(user_id)
-
         elif request.user.is_authenticated:
             user_id = request.user.user_id
-
         else:
             return Response(
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        print(user_id)
 
         submit = Submit.objects.filter(user_id=user_id).order_by("created_at")
         submit_serializer = SubmitSerializer(submit, many=True)
@@ -190,11 +190,11 @@ class Characters(APIView):
         nick_name = user.nick_name
 
         user_characters = []
+        filtered_data = []
 
         count = 0
         duplicate_character = None
         for data in submit_serializer.data:
-            data["id"] = encrypt_resource_id(data["id"])
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] is None:
                 data["nick_name"] = nick_name
@@ -209,6 +209,7 @@ class Characters(APIView):
                             keyword.append(answer["keyword"])
                     else:
                         break
+
                 # response data에 키워드 추가
                 data["keyword"] = keyword
                 if count == 0:
@@ -217,14 +218,16 @@ class Characters(APIView):
                     duplicate_character = data
                 count += 1
                 user_characters.append(data)
+            else:
+                filtered_data.append(data)
 
-        filtered_data = [
-            character
-            for character in submit_serializer.data
-            if character not in user_characters
-        ]
+            data["id"] = encrypt_resource_id(data["id"])
 
-        # user_characters.extend(filtered_data)
+        # filtered_data = [
+        #     character
+        #     for character in submit_serializer.data
+        #     if character not in user_characters
+        # ]
 
         # for character in user_characters:
         #     character["id"] = encrypt_resource_id(character["id"])
@@ -248,6 +251,8 @@ class Characters(APIView):
 
         if poll_id is None:
             Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        print("post", poll_id)
 
         poll = Poll.objects.get(id=poll_id)
 

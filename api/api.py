@@ -41,7 +41,7 @@ def generate_presigned_url(object_name):
             Params={
                 "Bucket": bucket_name,
                 "Key": object_name,
-                "ResponseContentType": "image/jpeg",
+                # "ResponseContentType": "image/jpeg",
             },
             ExpiresIn=expires_in,
         )
