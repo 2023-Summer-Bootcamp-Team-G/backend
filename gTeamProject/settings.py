@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "gunicorn",
     "drf_yasg",
     "rest_framework",
+    "health",
     "accounts",
     "question",
     "character",

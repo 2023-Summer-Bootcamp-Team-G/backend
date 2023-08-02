@@ -172,16 +172,16 @@ class Characters(APIView):
 
         if user_id is not None:
             user_id = decrypt_resource_id(user_id)
-
         elif request.user.is_authenticated:
             user_id = request.user.user_id
-
         else:
             return Response(
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+
         submit = Submit.objects.filter(user_id=user_id).exclude(result_url__isnull=True).order_by("created_at")
+
         submit_serializer = SubmitSerializer(submit, many=True)
 
         # user nick_name 가져오기
@@ -190,11 +190,11 @@ class Characters(APIView):
         nick_name = user.nick_name
 
         user_characters = []
+        filtered_data = []
 
         count = 0
         duplicate_character = None
         for data in submit_serializer.data:
-            data["id"] = encrypt_resource_id(data["id"])
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] is None:
                 data["nick_name"] = nick_name
@@ -209,6 +209,7 @@ class Characters(APIView):
                             keyword.append(answer["keyword"])
                     else:
                         break
+
                 # response data에 키워드 추가
                 data["keyword"] = keyword
                 if count == 0:
@@ -217,14 +218,16 @@ class Characters(APIView):
                     duplicate_character = data
                 count += 1
                 user_characters.append(data)
+            else:
+                filtered_data.append(data)
 
-        filtered_data = [
-            character
-            for character in submit_serializer.data
-            if character not in user_characters
-        ]
+            data["id"] = encrypt_resource_id(data["id"])
 
-        # user_characters.extend(filtered_data)
+        # filtered_data = [
+        #     character
+        #     for character in submit_serializer.data
+        #     if character not in user_characters
+        # ]
 
         # for character in user_characters:
         #     character["id"] = encrypt_resource_id(character["id"])
@@ -248,6 +251,8 @@ class Characters(APIView):
 
         if poll_id is None:
             Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        print("post", poll_id)
 
         poll = Poll.objects.get(id=poll_id)
 
@@ -293,6 +298,8 @@ class Characters(APIView):
         # 캐릭터 아이디로 답변 검색
         answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
 
+        print("n_answers, prev:", len(answer_list), "now:", len(answers))
+
         # 답변 저장
         for i in range(len(answers)):
             content = answers[i]
@@ -323,9 +330,11 @@ class URLs(APIView):  # 4개의 캐릭터 url 받아오기
         if not task.ready():
             return Response(
                 # {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
-                {"status": task.state},
+                # {"status": task.state},
                 status=status.HTTP_202_ACCEPTED,
             )  # status code 수정
+
+        # 롱폴링 구현 필요
 
         result = task.get()
         if result is not None:
@@ -425,10 +434,9 @@ class DuplicateCharacter(APIView):
             )
         else:
             user_id = request.user.user_id
+            tmp_user_id = request.data.get("user_id")
 
-        print(encrypt_resource_id(request.data.get("user_id")))
-
-        if decrypt_resource_id(request.data.get("user_id")) != user_id:
+        if user_id != tmp_user_id and user_id != decrypt_resource_id(tmp_user_id):
             return Response(
                 {"message": "중복캐릭터 생성 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -501,10 +509,16 @@ class KeywordChart(APIView):
         responses={200: GetKeywordChartResponseSerializer},
     )
     def get(self, request):
-        user_id = decrypt_resource_id(request.query_params.get("user_id"))
+        user_id = request.query_params.get("user_id", None)
 
-        if user_id is None:
-            Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
+        if user_id is not None:
+            user_id = decrypt_resource_id(user_id)
+        elif request.user.is_authenticated:
+            user_id = request.user.user_id
+        else:
+            return Response(
+                {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
         poll_id = poll.id
