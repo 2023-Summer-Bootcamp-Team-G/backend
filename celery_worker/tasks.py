@@ -1,6 +1,7 @@
 import uuid
 import redis
 import asyncio
+import logging
 
 from .celery import app
 from common.aws import AWSManager
@@ -11,6 +12,9 @@ from api.imageGenAPI import ImageGenAPI
 MAX_CONCURRENT_REQUESTS = 3
 
 redis_client = redis.StrictRedis(host="redis", port=6379, db=2)
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
 
 
 # ## 아직 작업 중 시작
@@ -61,7 +65,7 @@ async def create_image(key, auth_cookie, prompt):
 
 
 @app.task(bind=True)
-def create_character(self, submit_id, prompt, duplicate=False):
+def create_character(self, submit_id, keywords, duplicate=False):
     cookie_index, auth_cookie = get_round_robin_key()
 
     key = "concurrent_requests_" + str(cookie_index)
@@ -69,6 +73,19 @@ def create_character(self, submit_id, prompt, duplicate=False):
     lock_acquired = False
 
     try:
+        logger.info(keywords)
+
+        # prompt = f'{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 "{keywords[5]}" 스타일 {keywords[4]} {keywords[0]} character'
+        # prompt = f'{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 "{keywords[5]}" 스타일 {keywords[4]} {keywords[0]} 캐릭터'
+        prompt = f"{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 {keywords[5]} 스타일 {keywords[4]} {keywords[0]} 캐릭터"
+        # prompt = f"{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 {keywords[5]} 스타일 {keywords[4]} {keywords[0]} non-human 캐릭터"
+
+        # prompt = "학교에서 가방착용하고 맥북들고있는 디즈니 스타일 빨간색 햄스터 캐릭터"
+        # prompt = "학교에서  안경착용하고 맥북 타이핑 거북이 디즈니 스타일  non human 캐릭터"
+        # prompt = "학교에서 안경착용하고 맥북들고있는 거북이 디즈니 스타일 non human 캐릭터"
+
+        logger.info(prompt)
+
         lock_owner = str(uuid.uuid4())
 
         while not lock_acquired:
@@ -76,8 +93,7 @@ def create_character(self, submit_id, prompt, duplicate=False):
             if lock_acquired:
                 redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
                 print("get lock " + key + ":lock " + lock_owner)
-
-        prompt = ", ".join(prompt)  # prompt 처리 추가
+                logger.info("get lock " + key + ":lock " + lock_owner)
 
         loop = asyncio.get_event_loop()
         result_url, _ = loop.run_until_complete(create_image(key, auth_cookie, prompt))
@@ -89,7 +105,7 @@ def create_character(self, submit_id, prompt, duplicate=False):
             submit.result_url = result_url
             submit.save()
 
-        return {"result_url": result_url, "submit_id": submit_id, "keyword": prompt}
+        return {"result_url": result_url, "submit_id": submit_id, "keyword": keywords}
     except Exception as e:
         self.update_state(state="FAILURE")
 

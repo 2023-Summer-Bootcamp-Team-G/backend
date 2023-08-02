@@ -25,6 +25,8 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from question.views import Questions
 
+from health.views import health_check
+
 schema_view = get_schema_view(
     openapi.Info(
         title="TeamG API",
@@ -44,6 +46,7 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
+    path("api/health", health_check.as_view(), name="health-check"),
     path("", include("django_prometheus.urls")),
 ]
 
