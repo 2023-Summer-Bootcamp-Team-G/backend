@@ -405,10 +405,9 @@ class DuplicateCharacter(APIView):
             )
         else:
             user_id = request.user.user_id
+            tmp_user_id = request.data.get("user_id")
 
-        print(encrypt_resource_id(request.data.get("user_id")))
-
-        if decrypt_resource_id(request.data.get("user_id")) != user_id:
+        if user_id != tmp_user_id and user_id != decrypt_resource_id(tmp_user_id):
             return Response(
                 {"message": "중복캐릭터 생성 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
