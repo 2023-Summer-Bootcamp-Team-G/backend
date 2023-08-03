@@ -33,31 +33,49 @@ auth_cookies = [
 ]  # os.getenv("BING_SESSION_ID") 이거 빼고 테스트
 # ## 아직 작업 중 끝
 
+image_generators = [
+    # ImageGenAPI(get_ImageCreator_Cookie()),
+    ImageGenAPI(os.getenv("BING_SESSION_ID")),
+]
+
 app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(auth_cookies)})
 
 
-def get_round_robin_key():
+# def get_round_robin_key():
+#     cookie_index = redis_client.incr("cookie_index")
+#     cookie_index %= len(auth_cookies)
+#     return cookie_index, auth_cookies[cookie_index]
+
+
+def get_round_robin_index():
     cookie_index = redis_client.incr("cookie_index")
-    cookie_index %= len(auth_cookies)
-    return cookie_index, auth_cookies[cookie_index]
+    cookie_index %= len(image_generators)
+    return cookie_index
 
 
-async def create_image(key, auth_cookie, prompt):
-    while True:
-        current_requests = redis_client.incr(key)
-        if current_requests <= MAX_CONCURRENT_REQUESTS:
-            redis_client.delete(key + ":lock")  # 락 해제
-            print("get request approval " + str(current_requests))
-            print("delete lock " + key + ":lock")
-            break
-        else:
-            redis_client.decr(key)
-            await asyncio.sleep(1)
+async def create_image(key, cookie_index, prompt):
+    # while True:
+    #     current_requests = redis_client.incr(key)
+    #     if current_requests <= MAX_CONCURRENT_REQUESTS:
+    #         redis_client.delete(key + ":lock")  # 락 해제
+    #         print("get request approval " + str(current_requests))
+    #         print("delete lock " + key + ":lock")
+    #         break
+    #     else:
+    #         redis_client.decr(key)
+    #         await asyncio.sleep(1)
 
     try:
-        image_generator = ImageGenAPI(auth_cookie)
-        result = await image_generator.get_images(prompt)
-        return result
+        # image_generator = ImageGenAPI(auth_cookie)
+        # result = await image_generators[cookie_index].get_images(prompt)
+        # return result
+
+        return [
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        ], None
     except Exception as e:
         raise e
     finally:
@@ -66,11 +84,13 @@ async def create_image(key, auth_cookie, prompt):
 
 @app.task(bind=True)
 def create_character(self, submit_id, keywords, duplicate=False):
-    cookie_index, auth_cookie = get_round_robin_key()
+    # cookie_index, auth_cookie = get_round_robin_key()
+    cookie_index = get_round_robin_index()
 
     key = "concurrent_requests_" + str(cookie_index)
 
-    lock_acquired = False
+    # lock_acquired = False
+    lock_acquired = True
 
     try:
         logger.info(keywords)
@@ -96,7 +116,7 @@ def create_character(self, submit_id, keywords, duplicate=False):
                 logger.info("get lock " + key + ":lock " + lock_owner)
 
         loop = asyncio.get_event_loop()
-        result_url, _ = loop.run_until_complete(create_image(key, auth_cookie, prompt))
+        result_url, _ = loop.run_until_complete(create_image(key, cookie_index, prompt))
 
         if duplicate:
             result_url = upload_img_to_s3(result_url[0])

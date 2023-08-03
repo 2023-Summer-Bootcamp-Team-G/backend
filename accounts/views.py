@@ -13,16 +13,18 @@ from .swagger_serializer import (
 
 from question.models import Poll
 from common.auth import encrypt_resource_id
+from asgiref.sync import sync_to_async
+from common.asyncAPIView import AsyncAPIView
 
 User = get_user_model()
 
 
-class RegisterView(APIView):
+class RegisterView(AsyncAPIView):
     @swagger_auto_schema(
         request_body=PostUserRequestSerializer,
         responses={201: PostUserResponseSerializer},
     )
-    def post(self, request):
+    async def post(self, request):
         nick_name = request.data.get("nick_name")
         user_id = request.data.get("user_id")
         password = request.data.get("password")
@@ -33,7 +35,7 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if User.objects.filter(user_id=user_id).exists():
+        if await sync_to_async(lambda: User.objects.filter(user_id=user_id).exists())():
             return Response(
                 {"error": "Username already exists."},
                 status=status.HTTP_409_CONFLICT,
@@ -51,9 +53,8 @@ class RegisterView(APIView):
             password=password,
         )
 
-        user.save()
-
-        login(request, user)
+        await sync_to_async(user.save)()
+        await sync_to_async(login)(request, user)
 
         return Response(
             {"message": "User registered successfully."}, status=status.HTTP_201_CREATED
