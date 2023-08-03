@@ -18,6 +18,8 @@ from question.models import Poll, Question
 from accounts.models import User
 
 from common.auth import encrypt_resource_id, decrypt_resource_id
+from asgiref.sync import sync_to_async
+from common.asyncAPIView import AsyncAPIView
 
 
 def create_poll(user_id):
