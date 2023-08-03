@@ -33,23 +33,13 @@ docker-compose up
 />
 </details>
 
-# File Structure
-<details><summary>Frontend
-</summary>
-<code>react</code>
-</details>
-<details><summary>Backend
-</summary>
-<code>django</code>
-</details>
-
 ## Detailed Info
 **NAME** | **Description**
 :---:|:---:
 Nginx | 웹서버, 프록시 서버, https 연결 등을 담당합니다. | 
 React | 질문 생성 및 답변, 캐릭터를 생성하여 보여주는 역할을 담당합니다. | 
-Django | It'me의 서버로서 각종 요청을 처리하며 DB와 직접 소통합니다. | 
-Gunicorn | |
+Django | It's me의 서버로서 각종 요청을 처리하며 DB와 직접 소통합니다. | 
+Gunicorn</br>Uvicorn | Gunicorn으로 Uvicorn 프로세스를 관리하며 요청을 비동기로 처리합니다. |
 Mysql(RDS) | Database | 
 RabbitMQ | 메세지 브로커로서 이미지 생성 처리 시간이 길기 때문에 사용합니다. | 
 Celery | 이미지 생성과 같은 작업을 비동기 수행하기 위해 사용합니다. | 
