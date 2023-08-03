@@ -7,6 +7,7 @@ import asyncio
 import requests
 
 from enum import Enum
+import os
 
 BING_URL = "https://www.bing.com"
 

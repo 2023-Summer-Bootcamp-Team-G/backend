@@ -179,7 +179,6 @@ class Characters(APIView):
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-
         submit = Submit.objects.filter(user_id=user_id).exclude(result_url__isnull=True).order_by("created_at")
 
         submit_serializer = SubmitSerializer(submit, many=True)

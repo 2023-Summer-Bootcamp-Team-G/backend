@@ -183,7 +183,7 @@ fabric.properties
 .env.dev
 
 .DS_Store
-# static/
+static/
 /character/images
 images/
 

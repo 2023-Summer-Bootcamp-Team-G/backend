@@ -20,17 +20,17 @@ logger = logging.getLogger(__name__)
 # ## 아직 작업 중 시작
 def get_ImageCreator_Cookie():
     try:
-        return AWSManager.get_secret("BingImageCreator")["cookie"]
+        cookie = []
+        for i in range(2):
+            cookie_key = "cookie" + str(i + 1)
+            cookie.append(AWSManager.get_secret("BingImageCreator")[cookie_key])
+        return cookie
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
-import os
-
-auth_cookies = [
-    get_ImageCreator_Cookie(),
-    # os.getenv("BING_SESSION_ID"),
-]  # os.getenv("BING_SESSION_ID") 이거 빼고 테스트
+auth_cookies = get_ImageCreator_Cookie()
+print("auth_cookies", *auth_cookies)
 # ## 아직 작업 중 끝
 
 app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(auth_cookies)})
