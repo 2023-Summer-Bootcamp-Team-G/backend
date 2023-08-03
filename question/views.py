@@ -16,8 +16,6 @@ from .swagger_serializer import (
 )
 from question.models import Poll, Question
 from accounts.models import User
-from django.http import JsonResponse
-from django.contrib.auth import authenticate
 
 from common.auth import encrypt_resource_id, decrypt_resource_id
 
@@ -29,44 +27,6 @@ def create_poll(user_id):
         return poll.id
     except User.DoesNotExist:
         return None
-
-
-def get_user_data(request):
-    session_id = request.session.session_key
-    user_id = request.session.get("user_id")
-    nick_name = request.session.get("nick_name")
-
-    # 로그아웃 상태 확인
-    if "logout" in request.GET:
-        # 세션 데이터 삭제
-        request.session.flush()
-        user_id = None
-        nick_name = None
-
-    user_data = {
-        "session_id": session_id,
-        "user_id": user_id,
-        "nick_name": nick_name,
-    }
-
-    return JsonResponse(user_data)
-    if user_id and nick_name:
-        return True
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": user_id,
-        #     "nick_name": nick_name,
-        # }
-    else:
-        return False
-        # user_data = {
-        #     "session_id": session_id,
-        #     "user_id": None,
-        #     "nick_name": None,
-        # }
-
-    # return JsonResponse(user_data)
-
 
 class Questions(APIView):
     @swagger_auto_schema(
