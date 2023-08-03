@@ -1,5 +1,6 @@
 import time
 import logging
+import json
 
 from api.imageGenAPI import ImageGenAPI
 from rest_framework import status
@@ -57,7 +58,14 @@ comprehend = AWSManager.get_comprehend_client()
 
 
 def extract_key_phrases(text, min_score=0.9):
-    response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
+    with open("word_replacements.json", "r", encoding="utf-8") as file:
+        word_replacements = json.load(file)
+
+    modified_text = text
+    for key, value in word_replacements.items():
+        modified_text = modified_text.replace(key, value)
+
+    response = comprehend.detect_key_phrases(Text=modified_text, LanguageCode="ko")
     key_phrases = [
         phrase["Text"]
         for phrase in response["KeyPhrases"]
