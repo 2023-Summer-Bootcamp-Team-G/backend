@@ -69,7 +69,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
-    "gTeamProject.middleware.GetUserDataMiddleware"
 ]
 
 ROOT_URLCONF = "gTeamProject.urls"
