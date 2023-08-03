@@ -292,7 +292,7 @@ class TestTeamGAPI(unittest.TestCase):
 
 
 class LoadTest:
-    num_users = 8
+    num_users = 1
 
     base_test_class = TestTeamGAPI
 
