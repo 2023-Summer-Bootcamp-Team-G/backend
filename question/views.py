@@ -28,7 +28,6 @@ def create_poll(user_id):
     except User.DoesNotExist:
         return None
 
-
 class Questions(APIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,

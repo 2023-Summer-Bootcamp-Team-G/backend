@@ -179,9 +179,8 @@ class Characters(APIView):
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        print(user_id)
+        submit = Submit.objects.filter(user_id=user_id).exclude(result_url__isnull=True).order_by("created_at")
 
-        submit = Submit.objects.filter(user_id=user_id).order_by("created_at")
         submit_serializer = SubmitSerializer(submit, many=True)
 
         # user nick_name 가져오기
