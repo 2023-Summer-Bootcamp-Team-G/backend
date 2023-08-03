@@ -1,7 +1,8 @@
 # It's ME?!
 # Instruction
 질문에 대한 친구들의 답변들의 키워드를 추출하여 본인을 형상화한 캐릭터를 만들어주는 서비스
-
+</br>
+[It'me?! medium](https://medium.com/@hgh1057/its-me-46d9de903a94)
 # DEMO
 이미지, 영상 등
 
