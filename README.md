@@ -6,7 +6,7 @@
 이미지, 영상 등
 
 # System Architecture
-![teamg drawio](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/744d5aee-edbe-4a1d-848a-4d27c21aed5a)
+![teamg drawio (6)](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/033c5dcd-f538-43c8-a1a5-5486108aa0c4)
 
 # Tech Stack
 
