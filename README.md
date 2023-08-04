@@ -29,18 +29,14 @@
 docker-compose up
 ```
 # Database
-<details><summary>ERD
-</summary>
 <img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/5fb8a02a-b305-47d3-80d6-28285ce1fc14/>
-</details>
+
 
 # API
-<details><summary>swagger
-</summary>
 <img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/446d59b8-f020-4836-a795-376b5f5b8184/>
 </br>
 <img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/d3bb7cf6-e78e-4430-ad86-d79c7d734901/>
-</details>
+
 
 ## Detailed Info
 **NAME** | **Description**
