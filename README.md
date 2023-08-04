@@ -4,7 +4,15 @@
 </br>
 [It'me?! medium](https://medium.com/@hgh1057/its-me-46d9de903a94)
 # DEMO
-이미지, 영상 등
+| 메인화면 & 회원가입 | 질문 생성 |
+| :---: | :---: |
+| ![main_signup](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/25394474-4278-4ded-9013-ce17bf0423b5)|![question](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/f90b2188-d48d-4f42-af51-ffc6e69d65a5)  | 
+| **답변 & 캐릭터 생성** | **마이페이지 & 링크 복사** |
+|![answer](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/07d3aece-18e7-4b4d-8edc-482a6f6e6498)| ![mypage](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/53093949-1718-4c6e-9dd0-5ae3050eb32d) |
+| **상세 페이지**| **키워드 차트**|
+|![detail](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/0f8c513f-18fc-427a-817f-50183f3b02a9)|![chart](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/cfcf7af9-b0b6-43d0-9523-f7ad0ebee511)|
+|**중복 캐릭터 생성 & 이미지 다운로드**|
+|![duplicate](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/0b9191ed-1c9b-4b36-b2ed-c48a26ea760c)
 
 # System Architecture
 ![teamg drawio (6)](https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/033c5dcd-f538-43c8-a1a5-5486108aa0c4)
