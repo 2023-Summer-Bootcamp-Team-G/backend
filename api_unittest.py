@@ -9,11 +9,11 @@ RUN_EXTRACT_TESTS = False
 
 
 class TestTeamGAPI(unittest.TestCase):
-    # base_url = "http://localhost:8000"
+    base_url = "http://localhost:8000"
     # base_url = "http://3.35.88.150:8000"
     # base_url = "https://1tsme.site"
     # base_url = "http://3.36.159.76:8000"
-    base_url = "http://localhost"
+    # base_url = "http://localhost"
 
     main_user_id = "test-unittest"
     main_password = "test"
