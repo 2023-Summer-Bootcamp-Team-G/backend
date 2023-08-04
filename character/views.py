@@ -73,15 +73,6 @@ async def extract_key_phrases(text, min_score=0.9):
     return key_phrases
 
 
-# def get_ImageCreator_Cookie():
-#     try:
-#         bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
-
-#         return bingCookie
-#     except Exception as e:
-#         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
-
-
 def count_keyword(poll_id):
     submits = Submit.objects.filter(poll_id=poll_id)
 
