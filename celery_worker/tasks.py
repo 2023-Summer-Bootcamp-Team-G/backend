@@ -1,3 +1,4 @@
+import time
 import uuid
 import redis
 import asyncio
@@ -23,8 +24,8 @@ logger = logging.getLogger(__name__)
 def get_ImageCreator_Cookie():
     try:
         cookie = []
-        for i in range(2):
-            cookie_key = "cookie" + str(i + 1)
+        for i in range(1):
+            cookie_key = "cookie" + str(i + 2)
             cookie.append(
                 ImageGenAPI(AWSManager.get_secret("BingImageCreator")[cookie_key])
             )
@@ -33,9 +34,9 @@ def get_ImageCreator_Cookie():
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
-# image_generators = get_ImageCreator_Cookie()
+image_generators = get_ImageCreator_Cookie()
 
-image_generators = [ImageGenAPI(os.getenv("BING_SESSION_ID"))]
+# image_generators = [ImageGenAPI(os.getenv("BING_SESSION_ID"))]
 
 app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(image_generators)})
 
@@ -47,22 +48,25 @@ def get_round_robin_index():
 
 
 def create_image(key, cookie_index, prompt):
-    # while True:
-    #     current_requests = redis_client.incr(key)
-    #     if current_requests <= MAX_CONCURRENT_REQUESTS:
-    #         redis_client.delete(key + ":lock")  # 락 해제
-    #         print("get request approval " + str(current_requests))
-    #         print("delete lock " + key + ":lock")
-    #         break
-    #     else:
-    #         redis_client.decr(key)
-    #         await asyncio.sleep(1)
+    while True:
+        current_requests = redis_client.incr(key)
+        if current_requests <= MAX_CONCURRENT_REQUESTS:
+            redis_client.delete(key + ":lock")  # 락 해제
+            print("get request approval " + str(current_requests))
+            print("delete lock " + key + ":lock")
+            break
+        else:
+            redis_client.decr(key)
+            time.sleep(1)  # await asyncio.sleep(1)
 
     try:
         loop = asyncio.get_event_loop()
         result = loop.run_until_complete(
             image_generators[cookie_index].get_images(prompt)
         )  # 이거 동기로 변경
+
+        logger.info(result)
+
         return result
 
         # return [
@@ -84,8 +88,8 @@ def create_character(self, submit_id, keywords, duplicate=False):
 
     key = "concurrent_requests_" + str(cookie_index)
 
-    # lock_acquired = False
-    lock_acquired = True
+    lock_acquired = False
+    # lock_acquired = True
 
     try:
         logger.info(keywords)
@@ -103,12 +107,12 @@ def create_character(self, submit_id, keywords, duplicate=False):
 
         lock_owner = str(uuid.uuid4())
 
-        # while not lock_acquired:
-        #     lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
-        #     if lock_acquired:
-        #         redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
-        #         print("get lock " + key + ":lock " + lock_owner)
-        #         logger.info("get lock " + key + ":lock " + lock_owner)
+        while not lock_acquired:
+            lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
+            if lock_acquired:
+                redis_client.expire(key + ":lock", 64)  # 락의 자동 만료 설정
+                print("get lock " + key + ":lock " + lock_owner)
+                logger.info("get lock " + key + ":lock " + lock_owner)
 
         # loop = asyncio.get_event_loop()
         # result_url, _ = loop.run_until_complete(create_image(key, cookie_index, prompt))
@@ -128,5 +132,5 @@ def create_character(self, submit_id, keywords, duplicate=False):
         raise ValueError("Some condition is not met. " + str(e))
     finally:
         if redis_client.get(key + ":lock") == lock_owner:
-            # redis_client.delete(key + ":lock")  # 락 해제
+            redis_client.delete(key + ":lock")  # 락 해제
             print("delete lock " + key + ":lock " + lock_owner)

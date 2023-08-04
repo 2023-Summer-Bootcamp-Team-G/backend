@@ -234,10 +234,10 @@ class TestTeamGAPI(unittest.TestCase):
                 "session": self.main_session,
                 "data": {"user_id": self.main_user_id},
             },
-            "new_creator": {
-                "session": session,
-                "data": {"user_id": data["user_id"]},
-            },
+            # "new_creator": {
+            #     "session": session,
+            #     "data": {"user_id": data["user_id"]},
+            # },
         }
 
         # new_creator

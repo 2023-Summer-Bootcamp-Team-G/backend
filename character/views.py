@@ -197,7 +197,8 @@ class Characters(AsyncAPIView):
 
         count = 0
         duplicate_character = None
-        for data in await sync_to_async(lambda: submit_serializer.data)():
+        submits = await sync_to_async(lambda: submit_serializer.data)()
+        for data in submits:
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] is None:
                 data["nick_name"] = nick_name
@@ -207,7 +208,8 @@ class Characters(AsyncAPIView):
                 answer_serializer = AnswerSerializer(answer_data, many=True)
 
                 keyword = []
-                for answer in await sync_to_async(lambda: answer_serializer.data)():
+                answers = await sync_to_async(lambda: answer_serializer.data)()
+                for answer in answers:
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
                         if answer["keyword"] != "":
