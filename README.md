@@ -1,6 +1,6 @@
 # It's ME?!
 # Instruction
-질문에 대한 친구들의 답변들의 키워드를 추출하여 본인을 형상화한 캐릭터를 만들어주는 서비스
+나를 바라보는 시선을 캐릭터로 시각화하여 보여주는 서비스
 </br>
 [It'me?! medium](https://medium.com/@hgh1057/its-me-46d9de903a94)
 # DEMO
@@ -23,15 +23,15 @@ docker-compose up
 # Database
 <details><summary>ERD
 </summary>
-<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/5fb8a02a-b305-47d3-80d6-28285ce1fc14
-/>
+<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/5fb8a02a-b305-47d3-80d6-28285ce1fc14/>
 </details>
 
 # API
 <details><summary>swagger
 </summary>
-<img src=
-/>
+<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/446d59b8-f020-4836-a795-376b5f5b8184/>
+</br>
+<img src=https://github.com/2023-Summer-Bootcamp-Team-G/backend/assets/91904079/d3bb7cf6-e78e-4430-ad86-d79c7d734901/>
 </details>
 
 ## Detailed Info
