@@ -13,14 +13,14 @@ expires_in = int(timedelta(days=7).total_seconds())  # URL의 만료 시간 (초
 
 def upload_img_to_s3(url):
     try:
-        # response = requests.get(url)
-        # if response.status_code != 200:
-        #     raise Exception(f"Failed to download the JPEG file from URL: {url}")
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise Exception(f"Failed to download the JPEG file from URL: {url}")
 
-        # file_key = str(uuid.uuid4()) + ".jpeg"
-        # s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=response.content)
+        file_key = str(uuid.uuid4()) + ".jpeg"
+        s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=response.content)
 
-        # url, expiration_time = generate_presigned_url(file_key)
+        url, expiration_time = generate_presigned_url(file_key)
         return url
 
     except ClientError as e:

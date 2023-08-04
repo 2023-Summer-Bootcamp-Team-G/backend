@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include
 from accounts.views import RegisterView, LoginView, LogoutView
-from character.views import nlpAPI, Characters
+from character.views import Characters
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -45,7 +45,6 @@ urlpatterns = [
     path("api/register", RegisterView.as_view(), name="register"),
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
-    path("api/extract-phrases", nlpAPI.as_view(), name="extract-phrases"),
     path("api/health", health_check.as_view(), name="health-check"),
     path("", include("django_prometheus.urls")),
 ]

@@ -9,10 +9,11 @@ RUN_EXTRACT_TESTS = False
 
 
 class TestTeamGAPI(unittest.TestCase):
-    base_url = "http://localhost:8000"
+    # base_url = "http://localhost:8000"
     # base_url = "http://3.35.88.150:8000"
     # base_url = "https://1tsme.site"
     # base_url = "http://3.36.159.76:8000"
+    base_url = "http://localhost"
 
     main_user_id = "test-unittest"
     main_password = "test"
@@ -120,8 +121,8 @@ class TestTeamGAPI(unittest.TestCase):
         # TODO: 캐릭터 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
         sessions = {
             "creator": self.main_session,
-            # "anonymous": requests.session(),
-            # "answerer": self.create_logged_in_session(),
+            "anonymous": requests.session(),
+            "answerer": self.create_logged_in_session(),
         }
 
         data = {
@@ -174,15 +175,15 @@ class TestTeamGAPI(unittest.TestCase):
                 elif responses[i].status_code != 202:
                     self.assertEqual(responses[i].status_code, 200)
 
-            time.sleep(1)
+            # time.sleep(1)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_07_characters_choice(self):
         # TODO: 캐릭터 선택 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
         data = {
             "task_id": self.test_task_ids[0],
-            # "index": len(TestTeamGAPI.results["urls"]) - 1,
-            "index": 0,
+            "index": len(TestTeamGAPI.results["urls"]) - 1,
+            # "index": 0,
         }
         response = self.main_session.post(
             f"{self.base_url}/api/characters/choice", json=data
@@ -229,10 +230,10 @@ class TestTeamGAPI(unittest.TestCase):
         session, data = self.create_logged_in_session(True)
 
         users = {
-            # "creator": {
-            #     "session": self.main_session,
-            #     "data": {"user_id": self.main_user_id},
-            # },
+            "creator": {
+                "session": self.main_session,
+                "data": {"user_id": self.main_user_id},
+            },
             "new_creator": {
                 "session": session,
                 "data": {"user_id": data["user_id"]},
@@ -256,7 +257,11 @@ class TestTeamGAPI(unittest.TestCase):
                 f"{self.base_url}/api/characters/duplicate", json=user["data"]
             )
             print("response", response.text.replace("\n", "")[:128], end="\n")
-            test_task_ids.append(response.json()["task_id"])
+            try:
+                test_task_ids.append(response.json()["task_id"])
+            except Exception as e:
+                pass
+
             TestTeamGAPI.test_task_ids = test_task_ids
             self.assertEqual(
                 response.status_code, 201, response.text.replace("\n", "")[:128]
@@ -284,15 +289,15 @@ class TestTeamGAPI(unittest.TestCase):
         TestTeamGAPI.results["extract_phrases_get"] = response.json()
         self.assertEqual(response.status_code, 200)
 
-    # @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
-    # def test_15_logout(self):
-    #     # TODO: 로그아웃 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-    #     response = self.main_session.post(f"{self.base_url}/api/logout")
-    #     self.assertEqual(response.status_code, 200)
+    @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
+    def test_15_logout(self):
+        # TODO: 로그아웃 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
+        response = self.main_session.post(f"{self.base_url}/api/logout")
+        self.assertEqual(response.status_code, 200)
 
 
 class LoadTest:
-    num_users = 8
+    num_users = 32
 
     base_test_class = TestTeamGAPI
 
@@ -310,7 +315,7 @@ class LoadTest:
                     if not isinstance(e, unittest.case.SkipTest):
                         raise ValueError("END TEST")
 
-    def test_load(self):
+    def run(self):
         # 동시 사용자 수만큼 스레드를 생성하여 테스트 함수 실행
         threads = []
         for i in range(self.num_users):
@@ -331,23 +336,21 @@ class LoadTest:
 
 
 if __name__ == "__main__":
-    # unittest.main(verbosity=2, failfast=True, exit=False)
+    unittest.main(verbosity=2, failfast=True, exit=False)
 
-    tt = LoadTest()
-    # tt.run_all_tests()
-    tt.test_load()
+    # LoadTest().run()
 
     # unittest.TextTestRunner().run(
     #     unittest.FunctionTestCase(TestTeamGAPI("test_00_test"))
     # )
 
-    # print(
-    #     "\n",
-    #     "\n".join(
-    #         [
-    #             f"{key}: " + "\n".join(str(item) + "\n" for item in value)
-    #             for key, value in TestTeamGAPI.results.items()
-    #         ]
-    #     ),
-    #     "\n",
-    # )
+    print(
+        "\n",
+        "\n".join(
+            [
+                f"{key}: " + "\n".join(str(item) + "\n" for item in value)
+                for key, value in TestTeamGAPI.results.items()
+            ]
+        ),
+        "\n",
+    )

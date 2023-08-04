@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
+# from rest_framework.views import APIView
 
 from .serializer import (
     QuestionSerializer,
@@ -18,35 +19,41 @@ from question.models import Poll, Question
 from accounts.models import User
 
 from common.auth import encrypt_resource_id, decrypt_resource_id
+from asgiref.sync import sync_to_async
+from common.asyncAPIView import AsyncAPIView
 
 
-def create_poll(user_id):
+async def create_poll(user_id):
     try:
-        user = User.objects.get(user_id=user_id)
-        poll = Poll.objects.create(user=user)
+        user = await sync_to_async(lambda: User.objects.get(user_id=user_id))()
+        poll = await sync_to_async(lambda: Poll.objects.create(user=user))()
         return poll.id
     except User.DoesNotExist:
         return None
 
-class Questions(APIView):
+
+class Questions(AsyncAPIView):
     @swagger_auto_schema(
         query_serializer=GetQuestionRequestSerializer,
         responses={200: GetQuestionResponseSerializer},
     )
-    def get(self, request):
-        poll_id = decrypt_resource_id(request.GET.get("poll_id"))
+    async def get(self, request):
+        poll_id = await sync_to_async(decrypt_resource_id)(request.GET.get("poll_id"))
         if poll_id is None:
             Response({"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST)
 
-        poll = Poll.objects.get(id=poll_id)
+        poll = await sync_to_async(lambda: Poll.objects.get(id=poll_id))()
         user_id = poll.user_id
-        user = User.objects.get(user_id=user_id)
+        user = await sync_to_async(lambda: User.objects.get(user_id=user_id))()
         nick_name = user.nick_name
 
-        questions = Question.objects.filter(poll_id=poll)
+        # questions = Question.objects.filter(poll_id=poll)
+        questions = await sync_to_async(lambda: Question.objects.filter(poll_id=poll))()
 
         questions_serializer = QuestionTextSerializer(questions, many=True)
-        response_data = [item["question_text"] for item in questions_serializer.data]
+        response_data = await sync_to_async(
+            lambda: [item["question_text"] for item in questions_serializer.data]
+        )()
         response = {
             "user_id": encrypt_resource_id(user_id),
             "nick_name": nick_name,
@@ -58,15 +65,15 @@ class Questions(APIView):
         request_body=PostQuestionRequestSerializer,
         responses={201: PostQuestionResponseSerializer},
     )
-    def post(self, request):
+    async def post(self, request):
         if not request.user.is_authenticated:
             return Response({"error": "로그인 필요"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             user_id = request.user.user_id
 
-        print(request.user.user_id)
+        # print(request.user.user_id)
 
-        poll_id = create_poll(user_id)  # poll 생성
+        poll_id = await create_poll(user_id)  # poll 생성
 
         if poll_id is None:
             return Response({"error": "poll 생성 실패"}, status=status.HTTP_400_BAD_REQUEST)
@@ -75,7 +82,7 @@ class Questions(APIView):
 
         # 질문 내용 체크 및 직렬화
         questions_serializer = QuestionSerializer(data=request.data)
-        if questions_serializer.is_valid():
+        if await sync_to_async(questions_serializer.is_valid)():
             questions = questions_serializer.validated_data["questions"]
             # 데이터베이스에 저장할 질문 데이터 생성
             for index in range(len(questions)):
@@ -96,13 +103,14 @@ class Questions(APIView):
             data=updated_questions, many=True
         )
 
-        if updated_serializer.is_valid():
-            updated_serializer.save()
+        if await sync_to_async(updated_serializer.is_valid)():
+            await sync_to_async(updated_serializer.save)()
         else:
             return Response(
                 {"error": updated_serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(
-            {"poll_id": encrypt_resource_id(poll_id)}, status=status.HTTP_201_CREATED
+            {"poll_id": await sync_to_async(encrypt_resource_id)(poll_id)},
+            status=status.HTTP_201_CREATED,
         )

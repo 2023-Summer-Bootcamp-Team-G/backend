@@ -1,5 +1,6 @@
 from rest_framework import status
-from rest_framework.views import APIView
+
+# from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate, login, logout
 
@@ -61,12 +62,12 @@ class RegisterView(AsyncAPIView):
         )
 
 
-class LoginView(APIView):
+class LoginView(AsyncAPIView):
     @swagger_auto_schema(
         request_body=PostLoginRequestSerializer,
         responses={200: PostLoginResponseSerializer},
     )
-    def post(self, request):
+    async def post(self, request):
         username = request.data.get("user_id")
         password = request.data.get("password")
 
@@ -76,7 +77,9 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = authenticate(request, username=username, password=password)
+        user = await sync_to_async(authenticate)(
+            request, username=username, password=password
+        )
 
         if user is None:
             return Response(
@@ -84,9 +87,12 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        login(request, user)
-
-        poll = Poll.objects.filter(user_id=user.user_id).order_by("created_at").last()
+        await sync_to_async(login)(request, user)
+        poll = await sync_to_async(
+            lambda: Poll.objects.filter(user_id=user.user_id)
+            .order_by("created_at")
+            .last()
+        )()
 
         if poll is not None:
             poll_id = encrypt_resource_id(poll.id)
@@ -105,7 +111,7 @@ class LoginView(APIView):
         )
 
 
-class LogoutView(APIView):
-    def post(self, request):
-        logout(request)
+class LogoutView(AsyncAPIView):
+    async def post(self, request):
+        await sync_to_async(logout)(request)
         return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)

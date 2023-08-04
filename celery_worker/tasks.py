@@ -9,6 +9,8 @@ from character.models import Submit
 from api.api import upload_img_to_s3
 from api.imageGenAPI import ImageGenAPI
 
+import os
+
 MAX_CONCURRENT_REQUESTS = 3
 
 redis_client = redis.StrictRedis(host="redis", port=6379, db=2)
@@ -23,28 +25,19 @@ def get_ImageCreator_Cookie():
         cookie = []
         for i in range(2):
             cookie_key = "cookie" + str(i + 1)
-            cookie.append(AWSManager.get_secret("BingImageCreator")[cookie_key])
+            cookie.append(
+                ImageGenAPI(AWSManager.get_secret("BingImageCreator")[cookie_key])
+            )
         return cookie
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
-auth_cookies = get_ImageCreator_Cookie()
-print("auth_cookies", *auth_cookies)
-# ## 아직 작업 중 끝
+# image_generators = get_ImageCreator_Cookie()
 
-image_generators = [
-    # ImageGenAPI(get_ImageCreator_Cookie()),
-    ImageGenAPI(os.getenv("BING_SESSION_ID")),
-]
+image_generators = [ImageGenAPI(os.getenv("BING_SESSION_ID"))]
 
-app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(auth_cookies)})
-
-
-# def get_round_robin_key():
-#     cookie_index = redis_client.incr("cookie_index")
-#     cookie_index %= len(auth_cookies)
-#     return cookie_index, auth_cookies[cookie_index]
+app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(image_generators)})
 
 
 def get_round_robin_index():
@@ -53,7 +46,7 @@ def get_round_robin_index():
     return cookie_index
 
 
-async def create_image(key, cookie_index, prompt):
+def create_image(key, cookie_index, prompt):
     # while True:
     #     current_requests = redis_client.incr(key)
     #     if current_requests <= MAX_CONCURRENT_REQUESTS:
@@ -66,16 +59,18 @@ async def create_image(key, cookie_index, prompt):
     #         await asyncio.sleep(1)
 
     try:
-        # image_generator = ImageGenAPI(auth_cookie)
-        # result = await image_generators[cookie_index].get_images(prompt)
-        # return result
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(
+            image_generators[cookie_index].get_images(prompt)
+        )  # 이거 동기로 변경
+        return result
 
-        return [
-            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-        ], None
+        # return [
+        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        # ], None
     except Exception as e:
         raise e
     finally:
@@ -108,15 +103,16 @@ def create_character(self, submit_id, keywords, duplicate=False):
 
         lock_owner = str(uuid.uuid4())
 
-        while not lock_acquired:
-            lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
-            if lock_acquired:
-                redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
-                print("get lock " + key + ":lock " + lock_owner)
-                logger.info("get lock " + key + ":lock " + lock_owner)
+        # while not lock_acquired:
+        #     lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
+        #     if lock_acquired:
+        #         redis_client.expire(key + ":lock", 16)  # 락의 자동 만료 설정
+        #         print("get lock " + key + ":lock " + lock_owner)
+        #         logger.info("get lock " + key + ":lock " + lock_owner)
 
-        loop = asyncio.get_event_loop()
-        result_url, _ = loop.run_until_complete(create_image(key, cookie_index, prompt))
+        # loop = asyncio.get_event_loop()
+        # result_url, _ = loop.run_until_complete(create_image(key, cookie_index, prompt))
+        result_url, _ = create_image(key, cookie_index, prompt)
 
         if duplicate:
             result_url = upload_img_to_s3(result_url[0])
@@ -132,5 +128,5 @@ def create_character(self, submit_id, keywords, duplicate=False):
         raise ValueError("Some condition is not met. " + str(e))
     finally:
         if redis_client.get(key + ":lock") == lock_owner:
-            redis_client.delete(key + ":lock")  # 락 해제
+            # redis_client.delete(key + ":lock")  # 락 해제
             print("delete lock " + key + ":lock " + lock_owner)

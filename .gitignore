@@ -189,3 +189,5 @@ images/
 
 monitor/prometheus/data/
 monitor/grafana/*.db
+
+log.log

@@ -1,10 +1,11 @@
-import time
+# import time
+import asyncio
 import logging
 
-from api.imageGenAPI import ImageGenAPI
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
+# from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 
 from common.aws import AWSManager
@@ -40,6 +41,9 @@ from api.api import upload_img_to_s3
 
 from common.auth import encrypt_resource_id, decrypt_resource_id
 
+from asgiref.sync import sync_to_async, async_to_sync
+from common.asyncAPIView import AsyncAPIView
+
 fixed_question_num = 6
 
 # 로거 생성
@@ -56,8 +60,11 @@ logger.addHandler(file_handler)
 comprehend = AWSManager.get_comprehend_client()
 
 
-def extract_key_phrases(text, min_score=0.9):
-    response = comprehend.detect_key_phrases(Text=text, LanguageCode="ko")
+async def extract_key_phrases(text, min_score=0.9):
+    response = await sync_to_async(comprehend.detect_key_phrases)(
+        Text=text, LanguageCode="ko"
+    )
+
     key_phrases = [
         phrase["Text"]
         for phrase in response["KeyPhrases"]
@@ -66,13 +73,13 @@ def extract_key_phrases(text, min_score=0.9):
     return key_phrases
 
 
-def get_ImageCreator_Cookie():
-    try:
-        bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
+# def get_ImageCreator_Cookie():
+#     try:
+#         bingCookie = AWSManager.get_secret("BingImageCreator")["cookie"]
 
-        return bingCookie
-    except Exception as e:
-        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
+#         return bingCookie
+#     except Exception as e:
+#         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
 def count_keyword(poll_id):
@@ -93,8 +100,8 @@ def count_keyword(poll_id):
     return keyword_count
 
 
-def create_submit(poll_id, nick_name, prompt, is_creator):
-    poll = Poll.objects.get(id=poll_id)
+async def create_submit(poll_id, nick_name, prompt, is_creator):
+    poll = await sync_to_async(Poll.objects.get)(id=poll_id)
     user_id = poll.user_id
 
     submit_data = {
@@ -114,15 +121,17 @@ def create_submit(poll_id, nick_name, prompt, is_creator):
     if is_creator:
         print("create submit by creator")
 
-        submit_list = Submit.objects.filter(
-            user_id=user_id, poll_id=poll_id, nick_name=None
-        ).order_by("created_at")
+        submit_list = await sync_to_async(
+            lambda: Submit.objects.filter(
+                user_id=user_id, poll_id=poll_id, nick_name=None
+            ).order_by("created_at")
+        )()
 
         if nick_name is None:  # 중복키워드로 캐릭터 만들 경우
-            if submit_list.count() > 1:
-                update_submit = submit_list.last()
+            if await sync_to_async(submit_list.count)() > 1:
+                update_submit = await sync_to_async(submit_list.last)()
         else:  # 캐릭터 다시 만들 경우
-            update_submit = submit_list.first()
+            update_submit = await sync_to_async(submit_list.first)()
         submit_data["nick_name"] = None
         if update_submit:  # 캐릭터 다시 생성 시
             submit_data["character_id"] = update_submit.id
@@ -130,8 +139,8 @@ def create_submit(poll_id, nick_name, prompt, is_creator):
     if update_submit is None:  # 캐릭터 최초 생성 시, 답변자가 생성할 때
         # 캐릭터 정보 저장
         submit_serializer = SubmitCreateSerializer(data=submit_data)
-        if submit_serializer.is_valid():
-            submit_instance = submit_serializer.save()
+        if await sync_to_async(submit_serializer.is_valid)():
+            submit_instance = await sync_to_async(submit_serializer.save)()
         else:
             return Response(
                 submit_serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -147,7 +156,7 @@ def create_submit(poll_id, nick_name, prompt, is_creator):
     return submit_data
 
 
-def create_answer(question_id, submit_id, i, content, keyword):
+async def create_answer(question_id, submit_id, i, content, keyword):
     data = {
         "question_id": question_id,
         "submit_id": submit_id,
@@ -156,18 +165,18 @@ def create_answer(question_id, submit_id, i, content, keyword):
         "keyword": keyword,
     }
     answer_serializer = AnswerPostSerializer(data=data)
-    if answer_serializer.is_valid():
-        answer_serializer.save()
+    if await sync_to_async(answer_serializer.is_valid)():
+        await sync_to_async(answer_serializer.save)()
     else:
         return Response(answer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class Characters(APIView):
+class Characters(AsyncAPIView):
     @swagger_auto_schema(
         query_serializer=GetCharacterListRequestSerializer,
         responses={200: GetCharacterListResponseSerializer},
     )
-    def get(self, request):
+    async def get(self, request):
         user_id = request.query_params.get("user_id", None)
 
         if user_id is not None:
@@ -179,12 +188,16 @@ class Characters(APIView):
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        submit = Submit.objects.filter(user_id=user_id).exclude(result_url__isnull=True).order_by("created_at")
+        submit = await sync_to_async(
+            lambda: Submit.objects.filter(user_id=user_id)
+            .exclude(result_url__isnull=True)
+            .order_by("created_at")
+        )()
 
         submit_serializer = SubmitSerializer(submit, many=True)
 
         # user nick_name 가져오기
-        user = User.objects.get(user_id=user_id)
+        user = await sync_to_async(User.objects.get)(user_id=user_id)
 
         nick_name = user.nick_name
 
@@ -193,15 +206,17 @@ class Characters(APIView):
 
         count = 0
         duplicate_character = None
-        for data in submit_serializer.data:
+        for data in await sync_to_async(lambda: submit_serializer.data)():
             # 만약 중복 키워드로 생성된 캐릭터 or 본인이 직접 만든 캐릭터일 경우
             if data["nick_name"] is None:
                 data["nick_name"] = nick_name
-                answer_data = Answer.objects.filter(submit_id=data["id"])
+                answer_data = await sync_to_async(Answer.objects.filter)(
+                    submit_id=data["id"]
+                )
                 answer_serializer = AnswerSerializer(answer_data, many=True)
 
                 keyword = []
-                for answer in answer_serializer.data:
+                for answer in await sync_to_async(lambda: answer_serializer.data)():
                     # 답변 번호 1~5(고정질문에 대한 답변)만 키워드로 추출
                     if 1 <= answer["num"] <= fixed_question_num:
                         if answer["keyword"] != "":
@@ -245,7 +260,7 @@ class Characters(APIView):
         request_body=PostCharacterRequestSerializer,
         responses={201: PostCharacterResponseSerializer},
     )
-    def post(self, request):
+    async def post(self, request):
         poll_id = decrypt_resource_id(request.data.get("poll_id"))
 
         if poll_id is None:
@@ -253,7 +268,7 @@ class Characters(APIView):
 
         print("post", poll_id)
 
-        poll = Poll.objects.get(id=poll_id)
+        poll = await sync_to_async(Poll.objects.get)(id=poll_id)
 
         if request.user.is_authenticated and request.user.user_id == poll.user_id:
             is_creator = True
@@ -272,7 +287,7 @@ class Characters(APIView):
             temp_answer = answers[i] + " 사용해"
 
             if i < fixed_question_num:
-                keyword = extract_key_phrases(temp_answer)
+                keyword = await extract_key_phrases(temp_answer)
                 print("extracted_keyword:", keyword)
                 if len(keyword) == 0 or keyword == temp_answer:
                     keyword = [temp_answer.replace(" 사용해", "")]
@@ -284,20 +299,29 @@ class Characters(APIView):
             else:
                 break
         # 캐릭터 생성
-        submit_data = create_submit(poll_id, nick_name, prompt, is_creator)
+        submit_data = await create_submit(poll_id, nick_name, prompt, is_creator)
         submit_id = submit_data["character_id"]
 
         # 이미지 생성 시작(여기서 빈 문자열을 굳이 보낼 필요가 있을까)
         task = create_character.delay(submit_id, prompt)
 
         # 질문 고유 번호 불러오기
-        question = Question.objects.filter(poll_id=poll_id).order_by("id")
+        question = await sync_to_async(
+            lambda: Question.objects.filter(poll_id=poll_id).order_by("id")
+        )()
         question_id_serializer = QuestionIdSerializer(question, many=True)
 
         # 캐릭터 아이디로 답변 검색
-        answer_list = Answer.objects.filter(submit_id=submit_id).order_by("id")
+        answer_list = await sync_to_async(
+            lambda: Answer.objects.filter(submit_id=submit_id).order_by("id")
+        )()
 
-        print("n_answers, prev:", len(answer_list), "now:", len(answers))
+        print(
+            "n_answers, prev:",
+            await sync_to_async(len)(answer_list),
+            "now:",
+            len(answers),
+        )
 
         # 답변 저장
         for i in range(len(answers)):
@@ -306,57 +330,67 @@ class Characters(APIView):
                 keyword = prompt[i]
             else:
                 keyword = None
-            question_id = question_id_serializer.data[i]["id"]
+            question_id = await sync_to_async(
+                lambda: question_id_serializer.data[i]["id"]
+            )()
 
             if answer_list:  # 캐릭터에 대한 답변 업데이트
-                if len(answer_list) <= i:
-                    create_answer(question_id, submit_id, i, content, keyword)
+                if await sync_to_async(len)(answer_list) <= i:
+                    await create_answer(question_id, submit_id, i, content, keyword)
                 else:
                     answer_list[i].content = content
                     answer_list[i].keyword = keyword
-                    answer_list[i].save()
+                    await sync_to_async(answer_list[i].save)()
             else:  # 캐릭터에 대한 답변 생성
-                create_answer(question_id, submit_id, i, content, keyword)
+                await create_answer(question_id, submit_id, i, content, keyword)
 
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
 
-class URLs(APIView):  # 4개의 캐릭터 url 받아오기
+class URLs(AsyncAPIView):  # 4개의 캐릭터 url 받아오기
     @swagger_auto_schema(responses={200: GetURLsResponseSerializer})
-    def get(self, _, task_id):
+    async def get(self, _, task_id):
         task = AsyncResult(task_id)
 
-        if not task.ready():
-            return Response(
-                # {"status": task.state}, status=status.HTTP_406_NOT_ACCEPTABLE
-                # {"status": task.state},
-                status=status.HTTP_202_ACCEPTED,
-            )  # status code 수정
+        total_delay = 4
+        num_checks = 2  # check 2 per 1s
+        delay = total_delay / num_checks
 
-        # 롱폴링 구현 필요
+        for _ in range(num_checks):
+            task_done = task.ready()
+            if task_done:
+                result = task.get()
 
-        result = task.get()
-        if result is not None:
-            keyword = result["keyword"]
-        else:
-            return Response(
-                "bing_api error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+                if result is not None:
+                    keyword = result["keyword"]
+                else:
+                    return Response(
+                        "bing_api error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
 
-        while "" in keyword:
-            keyword.remove("")
+                while "" in keyword:
+                    keyword.remove("")
 
-        response_data = {"result_url": task.get()["result_url"], "keyword": keyword}
+                response_data = {
+                    "result_url": task.get()["result_url"],
+                    "keyword": keyword,
+                }
 
-        return Response(response_data, status=status.HTTP_200_OK)
+                return Response(response_data, status=status.HTTP_200_OK)
+
+            await asyncio.sleep(delay)
+
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+        )  # status code 수정
 
 
-class FinalSubmit(APIView):
+class FinalSubmit(AsyncAPIView):
     @swagger_auto_schema(
         request_body=PostFinalSubmitRequestSerializer,
         responses={201: PostFinalSubmitResponseSerializer},
     )
-    def post(self, request):  # url선택시 submit에 url 저장
+    async def post(self, request):  # url선택시 submit에 url 저장
         task_id = request.data.get("task_id")
         index = request.data.get("index")
         task = AsyncResult(task_id)
@@ -366,18 +400,18 @@ class FinalSubmit(APIView):
 
         final_url = upload_img_to_s3(result_url)
 
-        submit = Submit.objects.get(id=submit_id)
+        submit = await sync_to_async(Submit.objects.get)(id=submit_id)
         submit.result_url = final_url
-        submit.save()
+        await sync_to_async(submit.save)()
 
         return Response(
             {"message": encrypt_resource_id(submit_id)}, status=status.HTTP_201_CREATED
         )
 
 
-class CharacterDetail(APIView):
+class CharacterDetail(AsyncAPIView):
     @swagger_auto_schema(responses={200: GetCharacterDetailResponseSerializer})
-    def get(self, _, character_id):
+    async def get(self, _, character_id):
         submit_id = decrypt_resource_id(character_id)
 
         if submit_id is None:
@@ -385,31 +419,33 @@ class CharacterDetail(APIView):
 
         print(submit_id, type(submit_id))
         try:
-            submit = Submit.objects.get(id=submit_id)
+            submit = await sync_to_async(Submit.objects.get)(id=submit_id)
         except ObjectDoesNotExist:
             return Response(
                 {"error": "submit does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        submit_data = SubmitDetailSerializer(submit)
+        submit_data = await sync_to_async(lambda: SubmitDetailSerializer(submit))()
 
         # 캐릭터 답변 정보 가져오기
-        answer = Answer.objects.filter(submit_id=submit_id)
+        answer = await sync_to_async(Answer.objects.filter)(submit_id=submit_id)
         answer_data = AnswerSerializer(answer, many=True)
 
         answers = []
         keyword = []
-        for data in answer_data.data:
+        for data in await sync_to_async(lambda: answer_data.data)():
             answers.append(data["content"])
             if data["keyword"] is not None and data["keyword"] != "":
                 keyword.append(data["keyword"])
 
         # 캐릭터 질문 정보 가져오기
-        question = Question.objects.filter(poll_id=submit.poll_id)
+        question = await sync_to_async(
+            lambda: Question.objects.filter(poll_id=submit.poll_id)
+        )()
         question_data = QuestionTextSerializer(question, many=True)
 
         questions = []
-        for data in question_data.data:
+        for data in await sync_to_async(lambda: question_data.data)():
             questions.append(data["question_text"])
 
         response_data = dict(submit_data.data)
@@ -421,7 +457,7 @@ class CharacterDetail(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class DuplicateCharacter(APIView):
+class DuplicateCharacter(AsyncAPIView):
     @swagger_auto_schema(
         request_body=GetCharacterListRequestSerializer,
         responses={201: PostCharacterResponseSerializer},
@@ -463,7 +499,7 @@ class DuplicateCharacter(APIView):
             else:
                 prompt.append("")  # tmp
 
-        submit_data = create_submit(poll_id, None, prompt, True)
+        submit_data = async_to_sync(create_submit)(poll_id, None, prompt, True)
         submit_id = submit_data["character_id"]
 
         task = create_character.delay(submit_id, prompt, True)
@@ -502,12 +538,12 @@ class DuplicateCharacter(APIView):
         return Response({"task_id": task.id}, status=status.HTTP_201_CREATED)
 
 
-class KeywordChart(APIView):
+class KeywordChart(AsyncAPIView):
     @swagger_auto_schema(
         query_serializer=GetCharacterListRequestSerializer,
         responses={200: GetKeywordChartResponseSerializer},
     )
-    def get(self, request):
+    async def get(self, request):
         user_id = request.query_params.get("user_id", None)
 
         if user_id is not None:
@@ -519,9 +555,11 @@ class KeywordChart(APIView):
                 {"errors": "invalid_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        poll = Poll.objects.filter(user_id=user_id).order_by("created_at").last()
+        poll = await sync_to_async(
+            lambda: Poll.objects.filter(user_id=user_id).order_by("created_at").last()
+        )()
         poll_id = poll.id
-        keyword_count = count_keyword(poll_id)
+        keyword_count = await sync_to_async(count_keyword)(poll_id)
 
         if keyword_count[1] == {}:
             return Response(
@@ -560,64 +598,64 @@ class KeywordChart(APIView):
 #         return Response(response_data, status=status.HTTP_200_OK)
 
 
-# APIView 클래스 정의
-class nlpAPI(APIView):
-    def get(self, request):
-        text = request.GET.get(
-            "text", "This is a task sentence for keyword extraction."
-        )
-        key_phrases = extract_key_phrases(text)
+# # APIView 클래스 정의
+# class nlpAPI(APIView):
+#     def get(self, request):
+#         text = request.GET.get(
+#             "text", "This is a task sentence for keyword extraction."
+#         )
+#         key_phrases = extract_key_phrases(text)
 
-        try:
-            # 이미지 생성 및 저장
-            start_time = time.time()
+#         try:
+#             # 이미지 생성 및 저장
+#             start_time = time.time()
 
-            auth_cookie = (
-                get_ImageCreator_Cookie()
-            )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-            image_generator = ImageGenAPI(auth_cookie)
-            image_links = image_generator.get_images(text)
+#             auth_cookie = (
+#                 get_ImageCreator_Cookie()
+#             )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+#             image_generator = ImageGenAPI(auth_cookie)
+#             image_links = image_generator.get_images(text)
 
-            processing_time = time.time() - start_time
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-            return Response({"error": str(e)})
+#             processing_time = time.time() - start_time
+#         except Exception as e:
+#             print(f"Error: {str(e)}")
+#             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+#             return Response({"error": str(e)})
 
-        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-        return Response(
-            {
-                "key_phrases": key_phrases,
-                "image_links": image_links,
-                "processing_time": processing_time,
-            }
-        )
+#         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+#         return Response(
+#             {
+#                 "key_phrases": key_phrases,
+#                 "image_links": image_links,
+#                 "processing_time": processing_time,
+#             }
+#         )
 
-    def post(self, request):
-        text = request.data.get("text", "")
-        key_phrases = extract_key_phrases(text)
+#     def post(self, request):
+#         text = request.data.get("text", "")
+#         key_phrases = extract_key_phrases(text)
 
-        try:
-            # 이미지 생성 및 저장
-            start_time = time.time()
+#         try:
+#             # 이미지 생성 및 저장
+#             start_time = time.time()
 
-            auth_cookie = (
-                get_ImageCreator_Cookie()
-            )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-            image_generator = ImageGenAPI(auth_cookie)
-            image_links = image_generator.get_images(text)
+#             auth_cookie = (
+#                 get_ImageCreator_Cookie()
+#             )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
+#             image_generator = ImageGenAPI(auth_cookie)
+#             image_links = image_generator.get_images(text)
 
-            processing_time = time.time() - start_time
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-            return Response({"error": str(e)})
+#             processing_time = time.time() - start_time
+#         except Exception as e:
+#             print(f"Error: {str(e)}")
+#             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
+#             return Response({"error": str(e)})
 
-        # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-        return Response(
-            {
-                "key_phrases": key_phrases,
-                "image_links": image_links,
-                "processing_time": processing_time,
-            }
-        )
+#         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
+#         return Response(
+#             {
+#                 "key_phrases": key_phrases,
+#                 "image_links": image_links,
+#                 "processing_time": processing_time,
+#             }
+#         )
