@@ -25,12 +25,20 @@ SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = int(timedelta(days=14).total_seconds())
 
-CORS_ORIGIN_WHITELIST = [
-    "https://localhost:*",  # for dev remove
-    "http://localhost:*",  # for dev remove
-    "https://3.35.88.150:8000",
-    "http://3.35.88.150:8000",
+CORS_ALLOWED_ORIGINS = ["http://1tsme.site", "https://1tsme.site"]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",  # "X-CSRFToken" 대소문자 구분 주의!
+    "x-requested-with",
 ]
+CSRF_TRUSTED_ORIGINS = ["http://1tsme.site", "https://1tsme.site"]
 
 # WSGI_APPLICATION = "gTeamProject.wsgi.application"
 ASGI_APPLICATION = "gTeamProject.asgi.application"
@@ -59,8 +67,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "common.middleware.CsrfCookieMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "common.middleware.CsrfCookieMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

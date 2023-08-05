@@ -22,21 +22,28 @@ logger = logging.getLogger(__name__)
 
 # ## 아직 작업 중 시작
 def get_ImageCreator_Cookie():
+    c_index = [os.getenv("ck1"), os.getenv("ck2")]
+
+    print(c_index)
+
     try:
-        cookie = []
-        for i in range(1):
-            cookie_key = "cookie" + str(i + 2)
-            cookie.append(
-                ImageGenAPI(AWSManager.get_secret("BingImageCreator")[cookie_key])
-            )
-        return cookie
+        inst = []
+        for i in range(len(c_index)):
+            cookie_key = "cookie" + str(c_index[i])
+
+            logger.info(f"{i}, {cookie_key}")
+
+            cookie = AWSManager.get_secret("BingImageCreator")[cookie_key]
+
+            logger.info(f"{i}, {cookie}")
+
+            inst.append(ImageGenAPI(cookie))
+        return inst
     except Exception as e:
         raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
 
 
 image_generators = get_ImageCreator_Cookie()
-
-# image_generators = [ImageGenAPI(os.getenv("BING_SESSION_ID"))]
 
 app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(image_generators)})
 
@@ -91,6 +98,8 @@ def create_character(self, submit_id, keywords, duplicate=False):
     lock_acquired = False
     # lock_acquired = True
 
+    time.sleep(0.4)
+
     try:
         logger.info(keywords)
 
@@ -110,7 +119,7 @@ def create_character(self, submit_id, keywords, duplicate=False):
         while not lock_acquired:
             lock_acquired = redis_client.setnx(key + ":lock", lock_owner)  # 락 설정
             if lock_acquired:
-                redis_client.expire(key + ":lock", 64)  # 락의 자동 만료 설정
+                redis_client.expire(key + ":lock", 32)  # 락의 자동 만료 설정
                 print("get lock " + key + ":lock " + lock_owner)
                 logger.info("get lock " + key + ":lock " + lock_owner)
 

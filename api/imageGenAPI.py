@@ -78,7 +78,7 @@ class ImageGenAPI:
                 elif not response.text or "errorMessage" in response.text:
                     if "errorMessage" in response.text:
                         print("has errorMessage")
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(4)
                 else:
                     break
 

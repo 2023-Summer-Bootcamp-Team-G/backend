@@ -46,9 +46,7 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name="login"),
     path("api/logout", LogoutView.as_view(), name="logout"),
     path("", include("django_prometheus.urls")),
-    path("api/health", health_check.as_view(), name="health-check"),
     path("health", health_check.as_view(), name="health-check"),
-    path("health/", health_check.as_view(), name="health-check"),
 ]
 
 urlpatterns += [
