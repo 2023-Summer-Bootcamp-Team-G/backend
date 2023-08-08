@@ -1,13 +1,13 @@
 from pathlib import Path
 from datetime import timedelta
-from common.aws import AWSManager
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-SECRET_KEY = AWSManager.get_secret("django")["SECRET_KEY"]
+
+SECRET_KEY = "h4x6-u1t2wt1vbj+_&pg&p*h-!j9ny4i_boa&@7j&eee3vtn^0"  # for test!!
 
 
 DEBUG = True  # Set False when production!!
@@ -25,21 +25,6 @@ SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = int(timedelta(days=14).total_seconds())
 
-CORS_ALLOWED_ORIGINS = ["http://1tsme.site", "https://1tsme.site"]
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",  # "X-CSRFToken" 대소문자 구분 주의!
-    "x-requested-with",
-]
-CSRF_TRUSTED_ORIGINS = ["http://1tsme.site", "https://1tsme.site"]
-
 # WSGI_APPLICATION = "gTeamProject.wsgi.application"
 ASGI_APPLICATION = "gTeamProject.asgi.application"
 
@@ -53,7 +38,6 @@ INSTALLED_APPS = [
     "gunicorn",
     "drf_yasg",
     "rest_framework",
-    "health",
     "accounts",
     "question",
     "character",
@@ -97,29 +81,14 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://redis:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         },
-#     }
-# }
-
-db_secret = AWSManager.get_secret("teacheer-db")
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": db_secret["dbname"],
-        "USER": db_secret["username"],
-        "PASSWORD": db_secret["password"],
-        "HOST": db_secret["host"],
-        "PORT": db_secret["port"],
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        "NAME": "your_database_name",
+        "USER": "your_database_user",
+        "PASSWORD": "your_database_password",
+        "HOST": "db",
+        "PORT": "3306",
     }
 }
 
@@ -159,27 +128,3 @@ STATIC_ROOT = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": "./log.log",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
-            "propagate": True,
-        },
-        "celery": {
-            "handlers": ["file"],
-            "level": "ERROR",
-            "propagate": True,
-        },
-    },
-}

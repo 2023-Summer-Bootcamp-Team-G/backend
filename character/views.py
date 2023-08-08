@@ -8,7 +8,6 @@ from rest_framework.response import Response
 # from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 
-from common.aws import AWSManager
 from .models import Submit, Answer
 from question.models import Question, Poll
 from accounts.models import User
@@ -57,20 +56,20 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-comprehend = AWSManager.get_comprehend_client()
 
+def extract_key_phrases(text, min_score=0.9):
+    # comprehend 사용불가
 
-async def extract_key_phrases(text, min_score=0.9):
-    response = await sync_to_async(comprehend.detect_key_phrases)(
-        Text=text, LanguageCode="ko"
-    )
+    # response = await sync_to_async(comprehend.detect_key_phrases)(
+    #     Text=text, LanguageCode="ko"
+    # )
 
-    key_phrases = [
-        phrase["Text"]
-        for phrase in response["KeyPhrases"]
-        if phrase["Score"] >= min_score
-    ]
-    return key_phrases
+    # key_phrases = [
+    #     phrase["Text"]
+    #     for phrase in response["KeyPhrases"]
+    #     if phrase["Score"] >= min_score
+    # ]
+    return text
 
 
 def count_keyword(poll_id):
@@ -280,7 +279,9 @@ class Characters(AsyncAPIView):
             temp_answer = answers[i] + " 사용해"
 
             if i < fixed_question_num:
-                keyword = await extract_key_phrases(temp_answer)
+                keyword = extract_key_phrases(
+                    answers[i]
+                )  # keyword = extract_key_phrases(temp_answer)
                 print("extracted_keyword:", keyword)
                 if len(keyword) == 0 or keyword == temp_answer:
                     keyword = [temp_answer.replace(" 사용해", "")]
@@ -589,66 +590,3 @@ class KeywordChart(AsyncAPIView):
 #         response_data["keyword"] = keyword
 
 #         return Response(response_data, status=status.HTTP_200_OK)
-
-
-# # APIView 클래스 정의
-# class nlpAPI(APIView):
-#     def get(self, request):
-#         text = request.GET.get(
-#             "text", "This is a task sentence for keyword extraction."
-#         )
-#         key_phrases = extract_key_phrases(text)
-
-#         try:
-#             # 이미지 생성 및 저장
-#             start_time = time.time()
-
-#             auth_cookie = (
-#                 get_ImageCreator_Cookie()
-#             )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-#             image_generator = ImageGenAPI(auth_cookie)
-#             image_links = image_generator.get_images(text)
-
-#             processing_time = time.time() - start_time
-#         except Exception as e:
-#             print(f"Error: {str(e)}")
-#             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-#             return Response({"error": str(e)})
-
-#         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-#         return Response(
-#             {
-#                 "key_phrases": key_phrases,
-#                 "image_links": image_links,
-#                 "processing_time": processing_time,
-#             }
-#         )
-
-#     def post(self, request):
-#         text = request.data.get("text", "")
-#         key_phrases = extract_key_phrases(text)
-
-#         try:
-#             # 이미지 생성 및 저장
-#             start_time = time.time()
-
-#             auth_cookie = (
-#                 get_ImageCreator_Cookie()
-#             )  # BingImageCreator API 인증에 사용되는 쿠키 값 가져오기
-#             image_generator = ImageGenAPI(auth_cookie)
-#             image_links = image_generator.get_images(text)
-
-#             processing_time = time.time() - start_time
-#         except Exception as e:
-#             print(f"Error: {str(e)}")
-#             # 이미지 생성에 실패한 경우 처리 (e.g., 오류 응답 반환)
-#             return Response({"error": str(e)})
-
-#         # 이미지 생성이 정상적으로 완료된 경우 결과 반환
-#         return Response(
-#             {
-#                 "key_phrases": key_phrases,
-#                 "image_links": image_links,
-#                 "processing_time": processing_time,
-#             }
-#         )

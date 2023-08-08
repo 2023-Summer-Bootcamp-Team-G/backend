@@ -1,32 +1,25 @@
 version: '3'
 
 services:
-  nginx:
-    container_name: nginx
-    build: ./nginx
-    ports:
-      - 80:80
-      - 443:443
-    restart: always
-    depends_on:
-      - webapp
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: your_database_name
+      MYSQL_USER: your_database_user
+      MYSQL_PASSWORD: your_database_password # for test!!
+      MYSQL_ROOT_PASSWORD: your_root_password
     networks:
       - mynetwork
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/dist:/usr/share/nginx/html
-      # - ./static:/usr/share/nginx/html
-      # - ./certbot/conf:/etc/letsencrypt
-      # - ./certbot/www:/var/www/certbot
 
   webapp:
     container_name: web_app
     build: .
-    command: sh -c "test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn -w 2 -k uvicorn.workers.UvicornWorker 'gTeamProject.asgi:application' --bind=0.0.0.0:8000 --reload"
+    command: sh -c "while ! nc -z db 3306; do sleep 1; done && python manage.py migrate && test -d static || mkdir static && python manage.py collectstatic --noinput && gunicorn -w 1 -k uvicorn.workers.UvicornWorker 'gTeamProject.asgi:application' --bind=0.0.0.0:8000 --reload"
     hostname: webapp
     ports:
       - 8000:8000
     depends_on:
+      - db
       - celery
       - rabbit
       - redis
@@ -34,9 +27,6 @@ services:
       - mynetwork
     volumes:
       - ./:/usr/src/app
-    environment:
-      - ck1=4
-      - ck2=5
 
   celery:
     container_name: celery_worker
@@ -49,9 +39,6 @@ services:
       - mynetwork
     volumes:
       - ./celery_worker:/usr/src/app/celery_worker
-    environment:
-      - ck1=4
-      - ck2=5
 
   rabbit:
     container_name: rabbitmq

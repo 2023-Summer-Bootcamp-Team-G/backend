@@ -1,8 +1,6 @@
-import time
 import uuid
 import unittest
 import requests
-import threading
 
 RUN_POST_TESTS = True
 RUN_EXTRACT_TESTS = False
@@ -10,11 +8,8 @@ RUN_EXTRACT_TESTS = False
 
 class TestTeamGAPI(unittest.TestCase):
     base_url = "http://localhost:8000"
-    base_url = "http://localhost"
-    # base_url = "http://3.35.88.150:8000"
-    # base_url = "https://1tsme.site"
-    # base_url = "http://3.36.159.76:8000"
 
+    # 처음 1회 아래 값들로 직접 register 필요!
     main_user_id = "test-unittest"
     main_password = "test"
     main_nick_name = "nickname-unittest"
@@ -22,9 +17,6 @@ class TestTeamGAPI(unittest.TestCase):
     main_session = requests.session()
 
     results = dict()
-
-    def setUp(self):
-        pass
 
     def create_logged_in_session(self, return_data=False):
         session = requests.session()
@@ -42,19 +34,6 @@ class TestTeamGAPI(unittest.TestCase):
 
     def test_00_test(self):
         # TODO: 테스트
-        # session, data = self.create_logged_in_session(True)
-
-        # del data["nick_name"]
-
-        # response = self.main_session.post(f"{self.base_url}/api/login", json=data)
-
-        # print(response.content)
-
-        # self.assertTrue(False)
-
-        # TestTeamGAPI.main_user_id = "test-unittest"
-        # TestTeamGAPI.main_password = "test"
-        # TestTeamGAPI.main_nick_name = "nickname-unittest"
         pass
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
@@ -169,14 +148,11 @@ class TestTeamGAPI(unittest.TestCase):
                     responses[i] = None
                     completed_test += 1
 
-                    # self.assertTrue(
-                    #     all(key in data for key in ["result_url", "keyword"])
-                    # )
+                    self.assertTrue(
+                        all(key in data for key in ["result_url", "keyword"])
+                    )
                 elif responses[i].status_code != 202:
-                    # self.assertEqual(responses[i].status_code, 200)
-                    pass
-
-            # time.sleep(1)
+                    self.assertEqual(responses[i].status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_07_characters_choice(self):
@@ -204,7 +180,11 @@ class TestTeamGAPI(unittest.TestCase):
         response = self.main_session.get(
             f"{self.base_url}/api/characters", params=params
         )
-        TestTeamGAPI.test_character_id = response.json()["characters"][0]["id"]
+        # print(response.json())
+
+        TestTeamGAPI.test_character_id = response.json()["my_character"][
+            "id"
+        ]  # characters
         self.assertEqual(response.status_code, 200)
 
     def test_09_characters_read(self):
@@ -212,7 +192,7 @@ class TestTeamGAPI(unittest.TestCase):
         response = self.main_session.get(
             f"{self.base_url}/api/characters/{self.test_character_id}"
         )
-        # self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_10_characters_chart_list(self):
@@ -258,37 +238,17 @@ class TestTeamGAPI(unittest.TestCase):
                 f"{self.base_url}/api/characters/duplicate", json=user["data"]
             )
             print("response", response.text.replace("\n", "")[:128], end="\n")
-            try:
-                test_task_ids.append(response.json()["task_id"])
-            except Exception as e:
-                pass
+
+            test_task_ids.append(response.json()["task_id"])
 
             TestTeamGAPI.test_task_ids = test_task_ids
-            # self.assertEqual(
-            #     response.status_code, 201, response.text.replace("\n", "")[:128]
-            # )
+            self.assertEqual(
+                response.status_code, 201, response.text.replace("\n", "")[:128]
+            )
 
     def test_12_characters_urls_read(self):
         # TODO: 캐릭터 URL 읽기 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
         self.test_06_characters_urls_read()
-
-    @unittest.skipUnless(RUN_EXTRACT_TESTS, "Skipping extract_phrases tests")
-    def test_13_extract_phrases(self):
-        # TODO: 구문 추출 생성 엔드포인트에 POST 요청을 보내고, 응답을 확인합니다.
-        data = {"text": "This is a sample sentence for test."}  # 분석할 텍스트
-        response = self.main_session.post(
-            f"{self.base_url}/api/extract-phrases", json=data
-        )
-
-        TestTeamGAPI.results["extract_phrases_post"] = response.json()
-        self.assertEqual(response.status_code, 200)
-
-    @unittest.skipUnless(RUN_EXTRACT_TESTS, "Skipping extract_phrases tests")
-    def test_14_extract_phrases_list(self):
-        # TODO: 구문 추출 리스트 엔드포인트에 GET 요청을 보내고, 응답을 확인합니다.
-        response = self.main_session.get(f"{self.base_url}/api/extract-phrases")
-        TestTeamGAPI.results["extract_phrases_get"] = response.json()
-        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(RUN_POST_TESTS, "Skipping POST tests")
     def test_15_logout(self):
@@ -297,53 +257,8 @@ class TestTeamGAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
 
-class LoadTest:
-    num_users = 16
-
-    base_test_class = TestTeamGAPI
-
-    def run_all_tests(self, index):
-        for test_method in dir(self.base_test_class):
-            if test_method.startswith("test") and callable(
-                getattr(TestTeamGAPI, test_method)
-            ):
-                try:
-                    print(f"T{index}", test_method, end=" ")
-                    getattr(TestTeamGAPI(), test_method)()
-                    print(" ok")
-                except Exception as e:
-                    print(" error:", e)
-                    if not isinstance(e, unittest.case.SkipTest):
-                        raise ValueError("END TEST")
-
-    def run(self):
-        # 동시 사용자 수만큼 스레드를 생성하여 테스트 함수 실행
-        threads = []
-        for i in range(self.num_users):
-            thread = threading.Thread(target=self.run_all_tests, args=(i,))
-            threads.append(thread)
-
-        # 모든 스레드 시작
-        for thread in threads:
-            thread.start()
-
-        start_time = time.time()
-
-        # 모든 스레드 종료 대기
-        for thread in threads:
-            thread.join()
-
-        print("processing_time:", time.time() - start_time)
-
-
 if __name__ == "__main__":
-    # unittest.main(verbosity=2, failfast=True, exit=False)
-
-    LoadTest().run()
-
-    # unittest.TextTestRunner().run(
-    #     unittest.FunctionTestCase(TestTeamGAPI("test_00_test"))
-    # )
+    unittest.main(verbosity=2, failfast=True, exit=False)
 
     print(
         "\n",

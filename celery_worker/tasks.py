@@ -1,11 +1,11 @@
 import time
 import uuid
 import redis
-import asyncio
+
+# import asyncio
 import logging
 
 from .celery import app
-from common.aws import AWSManager
 from character.models import Submit
 from api.api import upload_img_to_s3
 from api.imageGenAPI import ImageGenAPI
@@ -19,31 +19,7 @@ redis_client = redis.StrictRedis(host="redis", port=6379, db=2)
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
-
-# ## 아직 작업 중 시작
-def get_ImageCreator_Cookie():
-    c_index = [os.getenv("ck1"), os.getenv("ck2")]
-
-    print(c_index)
-
-    try:
-        inst = []
-        for i in range(len(c_index)):
-            cookie_key = "cookie" + str(c_index[i])
-
-            logger.info(f"{i}, {cookie_key}")
-
-            cookie = AWSManager.get_secret("BingImageCreator")[cookie_key]
-
-            logger.info(f"{i}, {cookie}")
-
-            inst.append(ImageGenAPI(cookie))
-        return inst
-    except Exception as e:
-        raise Exception("BingImageCreator API 키를 가져오는 데 실패했습니다.") from e
-
-
-image_generators = get_ImageCreator_Cookie()
+image_generators = [ImageGenAPI(os.getenv("BING_SESSION_ID"))]
 
 app.conf.update({"worker_concurrency": MAX_CONCURRENT_REQUESTS * len(image_generators)})
 
@@ -67,21 +43,21 @@ def create_image(key, cookie_index, prompt):
             time.sleep(1)  # await asyncio.sleep(1)
 
     try:
-        loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(
-            image_generators[cookie_index].get_images(prompt)
-        )  # 이거 동기로 변경
+        # loop = asyncio.get_event_loop()
+        # result = loop.run_until_complete(
+        #     image_generators[cookie_index].get_images(prompt)
+        # )  # 이거 동기로 변경 예정
 
-        logger.info(result)
+        # logger.info(result)
 
-        return result
+        # return result
 
-        # return [
-        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-        #     "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
-        # ], None
+        return [
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+            "https://th.bing.com/th/id/OIG.f_qvMMe9vU945B5aU6tE?pid=ImgGn",
+        ], None
     except Exception as e:
         raise e
     finally:
@@ -96,21 +72,13 @@ def create_character(self, submit_id, keywords, duplicate=False):
     key = "concurrent_requests_" + str(cookie_index)
 
     lock_acquired = False
-    # lock_acquired = True
 
     time.sleep(0.4)
 
     try:
         logger.info(keywords)
 
-        # prompt = f'{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 "{keywords[5]}" 스타일 {keywords[4]} {keywords[0]} character'
-        # prompt = f'{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 "{keywords[5]}" 스타일 {keywords[4]} {keywords[0]} 캐릭터'
         prompt = f"{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 {keywords[5]} 스타일 {keywords[4]} {keywords[0]} 캐릭터"
-        # prompt = f"{keywords[3]}에서 {keywords[1]}착용하고 {keywords[2]}들고있는 {keywords[5]} 스타일 {keywords[4]} {keywords[0]} non-human 캐릭터"
-
-        # prompt = "학교에서 가방착용하고 맥북들고있는 디즈니 스타일 빨간색 햄스터 캐릭터"
-        # prompt = "학교에서  안경착용하고 맥북 타이핑 거북이 디즈니 스타일  non human 캐릭터"
-        # prompt = "학교에서 안경착용하고 맥북들고있는 거북이 디즈니 스타일 non human 캐릭터"
 
         logger.info(prompt)
 
